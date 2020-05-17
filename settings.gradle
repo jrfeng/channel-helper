@@ -1,0 +1,4 @@
+rootProject.name='channel-helper'
+include ':app'
+include ':helper'
+include ':processor'
