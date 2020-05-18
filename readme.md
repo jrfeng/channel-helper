@@ -166,7 +166,7 @@ public class DuckChannel {
 
 The name of generated helper class is base on your interface. 
 
-format:
+**Format:**
 
 ```text
 <interface_name>Channel
@@ -191,7 +191,7 @@ Then, then name of generated helper class will be `CustomName`.
 The generated helper class can be used with `HandlerPipe` and `MessengerPipe`, can help you use 
 Handler and Messenger easily(don't worry about memory leaks).
 
-**Example 1**: Use with HandlerPipe
+**Example 1**: Use with `HandlerPipe`
 
 ```java
 // Use with HandlerPipe
@@ -226,7 +226,7 @@ emitter.fly(5, 12);     // output: fly: {high:5, speed:12}
 emitter.swing(7);       // output: swing: {speed:12}
 ```
 
-**Example 2**: Use with MessengerPipe
+**Example 2**: Use with `MessengerPipe`
 
 Service:
 
@@ -323,7 +323,7 @@ Dispatcher<Message> mergeDispatcher = DispatcherUtil.merge(duckDispatcher, chick
 // pipe
 HandlerPipe handlerPipe = new HandlerPipe(mergeDispatcher);
 
-// emitter: shared pipe
+// emitter: share handlerPipe
 DuckChannel.Emitter<Message> duckDispatcher = new DuckChannel.Emitter(handlerPipe);
 ChickenChannel.Emitter<Message> chickenDispatcher = new ChickenChannel.Emitter(handlerPipe);
 ```
