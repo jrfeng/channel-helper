@@ -15,8 +15,6 @@ public interface Duck extends Bird {
 //
 //package channel.helper.test;
 //
-//import channel.helper.Pipe;
-//
 //import java.lang.Object;
 //import java.lang.Override;
 //import java.lang.String;
@@ -39,17 +37,20 @@ public interface Duck extends Bird {
 //
 //    private static final int METHOD_ID_4 = 4;
 //
-//    public static class Emitter<T> implements Duck {
-//        private Pipe<T> pipe;
+//    private DuckChannel() {
+//    }
 //
-//        public Emitter(Pipe<T> pipe) {
-//            this.pipe = pipe;
+//    public static class Emitter implements Duck {
+//        private channel.helper.Emitter emitter;
+//
+//        public Emitter(channel.helper.Emitter emitter) {
+//            this.emitter = emitter;
 //        }
 //
 //        private void sendMessage(int id, Map<String, Object> args) {
 //            args.put(KEY_CLASS_NAME, CLASS_NAME);
 //            args.put(KEY_METHOD_ID, id);
-//            pipe.emitData(args);
+//            emitter.emit(args);
 //        }
 //
 //        @Override
@@ -81,17 +82,10 @@ public interface Duck extends Bird {
 //        }
 //    }
 //
-//    public static class Dispatcher<T> implements channel.helper.Dispatcher {
-//        private Pipe<T> pipe;
-//
+//    public static class Dispatcher implements channel.helper.Dispatcher {
 //        private final WeakReference<Duck> callbackWeakReference;
 //
 //        public Dispatcher(Duck callback) {
-//            this.callbackWeakReference = new WeakReference<>(callback);
-//        }
-//
-//        public Dispatcher(Pipe<T> pipe, Duck callback) {
-//            this.pipe = pipe;
 //            this.callbackWeakReference = new WeakReference<>(callback);
 //        }
 //
@@ -107,22 +101,18 @@ public interface Duck extends Bird {
 //            }
 //            switch (methodId) {
 //                case METHOD_ID_1:
-//                    ;
 //                    int METHOD_ID_1_high = (int) data.get("high");
 //                    int METHOD_ID_1_speed = (int) data.get("speed");
 //                    callback.fly(METHOD_ID_1_high, METHOD_ID_1_speed);
 //                    return true;
 //                case METHOD_ID_2:
-//                    ;
 //                    callback.eat();
 //                    return true;
 //                case METHOD_ID_3:
-//                    ;
 //                    int METHOD_ID_3_voice = (int) data.get("voice");
 //                    callback.quack(METHOD_ID_3_voice);
 //                    return true;
 //                case METHOD_ID_4:
-//                    ;
 //                    int METHOD_ID_4_speed = (int) data.get("speed");
 //                    callback.swing(METHOD_ID_4_speed);
 //                    return true;
