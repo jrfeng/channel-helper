@@ -1,6 +1,7 @@
 package channel.processor;
 
 import channel.helper.Channel;
+import channel.helper.Dispatcher;
 import channel.helper.ParamInspector;
 
 import com.squareup.javapoet.*;
@@ -316,6 +317,7 @@ public class ChannelProcessor extends AbstractProcessor {
 
         // class: Dispatcher
         TypeSpec.Builder builder = TypeSpec.classBuilder("Dispatcher")
+                .addSuperinterface(ClassName.get(Dispatcher.class))
                 .addTypeVariable(T)
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
 
@@ -352,7 +354,7 @@ public class ChannelProcessor extends AbstractProcessor {
         builder.addMethod(constructor1)
                 .addMethod(constructor2);
 
-        // method: private boolean dispatch(Map<String, Object> data)
+        // override: pubic boolean dispatch(Map<String, Object> data)
         final String method_dispatch = "dispatch";
         final String param_data = "data";
         final String variable_methodId = "methodId";
@@ -361,6 +363,7 @@ public class ChannelProcessor extends AbstractProcessor {
         MethodSpec.Builder dispatchBuilder = MethodSpec.methodBuilder(method_dispatch)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(boolean.class)
+                .addAnnotation(ClassName.get(Override.class))
                 .addParameter(type_data, param_data)
                 .beginControlFlow("if (!$N.equals($N.get($N)))", FIELD_CLASS_NAME, param_data, FIELD_KEY_CLASS_NAME)
                 .addStatement("return false")
