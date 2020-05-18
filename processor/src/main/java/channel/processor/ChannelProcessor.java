@@ -2,7 +2,10 @@ package channel.processor;
 
 import channel.helper.Channel;
 import channel.helper.ParamInspector;
+
 import com.squareup.javapoet.*;
+
+import channel.helper.Pipe;
 import javafx.util.Pair;
 
 import javax.annotation.processing.*;
@@ -12,10 +15,14 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
@@ -26,6 +33,11 @@ public class ChannelProcessor extends AbstractProcessor {
     private Types mTypes;
     private Messager mMessager;
     private Elements mElements;
+
+    private static final String PREFIX_METHOD_ID = "METHOD_ID_";
+    private static final String FIELD_KEY_CLASS_NAME = "KEY_CLASS_NAME";
+    private static final String FIELD_KEY_METHOD_ID = "KEY_METHOD_ID";
+    private static final String FIELD_CLASS_NAME = "CLASS_NAME";
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -71,16 +83,9 @@ public class ChannelProcessor extends AbstractProcessor {
             checkMethodsParamType(methods, inspector, targetInterface);
         }
 
-        List<Pair<ExecutableElement, Integer>> methodIdPairs = generateAllMethodId(methods);
+        List<Pair<String, ExecutableElement>> methodIdPairs = generateAllMethodId(methods);
 
         TypeSpec channelWrapperType = buildChannelWrapper(channel.name(), targetInterface, methodIdPairs);
-        TypeSpec emitterType = buildEmitter(methodIdPairs);
-        TypeSpec dispatcherType = buildDispatcher(methodIdPairs);
-
-        channelWrapperType = channelWrapperType.toBuilder()
-//                .addType(emitterType)
-//                .addType(dispatcherType)
-                .build();
 
         writeJavaFile(channelWrapperType, targetInterface);
     }
@@ -149,63 +154,267 @@ public class ChannelProcessor extends AbstractProcessor {
         }
     }
 
-    private List<Pair<ExecutableElement, Integer>> generateAllMethodId(List<ExecutableElement> methods) {
-        List<Pair<ExecutableElement, Integer>> methodIdPairs = new ArrayList<>(methods.size());
+    private List<Pair<String, ExecutableElement>> generateAllMethodId(List<ExecutableElement> methods) {
+        List<Pair<String, ExecutableElement>> methodIdPairs = new ArrayList<>(methods.size());
 
         for (int i = 1; i <= methods.size(); i++) {
             ExecutableElement method = methods.get(i - 1);
-            methodIdPairs.add(new Pair<>(method, i));
+            methodIdPairs.add(new Pair<>(PREFIX_METHOD_ID + i, method));
         }
 
         return methodIdPairs;
     }
 
-    private TypeSpec buildChannelWrapper(String name, TypeElement targetInterface, List<Pair<ExecutableElement, Integer>> methodIdPairs) {
+    private TypeSpec buildChannelWrapper(String name, TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
         if ("".equals(name)) {
             name = targetInterface.getSimpleName() + "Channel";
         }
 
         ClassName string = ClassName.get("java.lang", "String");
-        FieldSpec KEY_CLASS_NAME = FieldSpec.builder(string, "KEY_CLASS_NAME", Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+        FieldSpec KEY_CLASS_NAME = FieldSpec.builder(string, FIELD_KEY_CLASS_NAME, Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
                 .initializer("$S", "__class_name")
                 .build();
-        FieldSpec KEY_METHOD_ID = FieldSpec.builder(string, "KEY_METHOD_ID", Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+        FieldSpec KEY_METHOD_ID = FieldSpec.builder(string, FIELD_KEY_METHOD_ID, Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
                 .initializer("$S", "__method_id")
                 .build();
-        FieldSpec CLASS_NAME = FieldSpec.builder(string, "CLASS_NAME", Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+        FieldSpec CLASS_NAME = FieldSpec.builder(string, FIELD_CLASS_NAME, Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
                 .initializer("$S", targetInterface.getQualifiedName())
                 .build();
 
         TypeSpec.Builder builder = TypeSpec.classBuilder(name)
+                .addModifiers(Modifier.PUBLIC)
                 .addField(KEY_CLASS_NAME)
                 .addField(KEY_METHOD_ID)
                 .addField(CLASS_NAME)
+                .addType(buildEmitter(targetInterface, methodIdPairs))
+                .addType(buildDispatcher(targetInterface, methodIdPairs))
                 .addFields(generateMethodIdField(methodIdPairs));
 
         return builder.build();
     }
 
-    private List<FieldSpec> generateMethodIdField(List<Pair<ExecutableElement, Integer>> methodIdPairs) {
+    private List<FieldSpec> generateMethodIdField(List<Pair<String, ExecutableElement>> methodIdPairs) {
         List<FieldSpec> methodIdFieldList = new ArrayList<>(methodIdPairs.size());
 
-        for (Pair<ExecutableElement, Integer> methodIdPair : methodIdPairs) {
+        int i = 1;
+        for (Pair<String, ExecutableElement> methodIdPair : methodIdPairs) {
             methodIdFieldList.add(
-                    FieldSpec.builder(TypeName.INT, "METHOD_ID_" + methodIdPair.getValue(), Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
-                            .initializer("$L", methodIdPair.getValue())
+                    FieldSpec.builder(TypeName.INT, methodIdPair.getKey(), Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+                            .initializer("$L", i)
                             .build()
             );
+            i++;
         }
 
         return methodIdFieldList;
     }
 
-    private TypeSpec buildEmitter(List<Pair<ExecutableElement, Integer>> methodIdPairs) {
-        // TODO
-        return null;
+    private TypeSpec buildEmitter(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
+        TypeVariableName T = TypeVariableName.get("T");
+
+        TypeSpec.Builder builder = TypeSpec.classBuilder("Emitter")
+                .addTypeVariable(T)
+                .addSuperinterface(targetInterface.asType())
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+
+        ParameterizedTypeName Pipe_T = ParameterizedTypeName.get(ClassName.get(Pipe.class), T);
+
+        // field
+        final String field_pipe = "pipe";
+
+        FieldSpec pipe = FieldSpec.builder(Pipe_T, field_pipe, Modifier.PRIVATE)
+                .build();
+
+        builder.addField(pipe);
+
+        // constructor
+        final String param_pipe = "pipe";
+
+        MethodSpec constructor = MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(Pipe_T, param_pipe)
+                .addStatement("this.$N = $N", field_pipe, param_pipe)
+                .build();
+
+        builder.addMethod(constructor);
+
+        // method: private void sendMessage(int id, Map<String, Object> args)
+        final String method_sendMessage = "sendMessage";
+        final String param_id = "id";
+        final String param_args = "args";
+
+        // Map<String, Object>
+        ParameterizedTypeName type_args = ParameterizedTypeName.get(
+                ClassName.get(Map.class),
+                ClassName.get(String.class),
+                ClassName.get(Object.class)
+        );
+
+        MethodSpec sendMessage = MethodSpec.methodBuilder(method_sendMessage)
+                .addModifiers(Modifier.PRIVATE)
+                .returns(TypeName.VOID)
+                .addParameter(TypeName.INT, param_id)
+                .addParameter(type_args, param_args)
+                .addStatement("$N.put($N, $N)", param_args, FIELD_KEY_CLASS_NAME, FIELD_CLASS_NAME)
+                .addStatement("$N.put($N, $N)", param_args, FIELD_KEY_METHOD_ID, param_id)
+                .addStatement("$N.emitData($N)", field_pipe, param_args)
+                .build();
+
+        builder.addMethod(sendMessage);
+
+        // override targetInterface
+        for (Pair<String, ExecutableElement> methodPair : methodIdPairs) {
+            builder.addMethod(
+                    overrideEmitterMethod(methodPair)
+            );
+        }
+
+        return builder.build();
     }
 
-    private TypeSpec buildDispatcher(List<Pair<ExecutableElement, Integer>> methodIdPairs) {
-        // TODO
-        return null;
+    private MethodSpec overrideEmitterMethod(Pair<String, ExecutableElement> methodPair) {
+        final String methodId = methodPair.getKey();
+        final ExecutableElement method = methodPair.getValue();
+
+        // Map<String, Object>
+        ParameterizedTypeName type_args = ParameterizedTypeName.get(
+                ClassName.get(Map.class),
+                ClassName.get(String.class),
+                ClassName.get(Object.class)
+        );
+
+        final String variable_args = "args";
+        MethodSpec.Builder builder = MethodSpec.overriding(methodPair.getValue())
+                .addStatement("$T $N = new $T<>()", type_args, variable_args, HashMap.class);
+
+        List<? extends VariableElement> params = method.getParameters();
+        for (VariableElement param : params) {
+            builder.addStatement("$N.put($S, $N)", variable_args, param.getSimpleName(), param.getSimpleName());
+        }
+
+        return builder.addStatement("sendMessage($N, $N)", methodId, variable_args)
+                .build();
+    }
+
+    private TypeSpec buildDispatcher(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
+        // T
+        TypeVariableName T = TypeVariableName.get("T");
+
+        // Pipe<T>
+        ParameterizedTypeName Pipe_T = ParameterizedTypeName.get(ClassName.get(Pipe.class), T);
+
+        // WeakReference<targetInterface>
+        ParameterizedTypeName WeakReference_targetInterface = ParameterizedTypeName.get(
+                ClassName.get(WeakReference.class), ClassName.get(targetInterface));
+
+        // Map<String, Object>
+        ParameterizedTypeName type_data = ParameterizedTypeName.get(
+                ClassName.get(Map.class),
+                ClassName.get(String.class),
+                ClassName.get(Object.class)
+        );
+
+        // class: Dispatcher
+        TypeSpec.Builder builder = TypeSpec.classBuilder("Dispatcher")
+                .addTypeVariable(T)
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+
+        // field
+        final String field_pipe = "pipe";
+        final String field_callbackWeakReference = "callbackWeakReference";
+
+        FieldSpec pipe = FieldSpec.builder(Pipe_T, field_pipe, Modifier.PRIVATE)
+                .build();
+        FieldSpec callbackWeakReference = FieldSpec.builder(WeakReference_targetInterface, field_callbackWeakReference)
+                .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+                .build();
+
+        builder.addField(pipe)
+                .addField(callbackWeakReference);
+
+        // constructor
+        final String param_callback = "callback";
+        final String param_pipe = "pipe";
+
+        MethodSpec constructor1 = MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(ClassName.get(targetInterface), param_callback)
+                .addStatement("this.$N = new $T<>($N)", field_callbackWeakReference, WeakReference.class, param_callback)
+                .build();
+        MethodSpec constructor2 = MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(Pipe_T, field_pipe)
+                .addParameter(ClassName.get(targetInterface), param_callback)
+                .addStatement("this.$N = $N", field_pipe, param_pipe)
+                .addStatement("this.$N = new $T<>($N)", field_callbackWeakReference, WeakReference.class, param_callback)
+                .build();
+
+        builder.addMethod(constructor1)
+                .addMethod(constructor2);
+
+        // method: private boolean dispatch(Map<String, Object> data)
+        final String method_dispatch = "dispatch";
+        final String param_data = "data";
+        final String variable_methodId = "methodId";
+        final String variable_callback = "callback";
+
+        MethodSpec.Builder dispatchBuilder = MethodSpec.methodBuilder(method_dispatch)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(boolean.class)
+                .addParameter(type_data, param_data)
+                .beginControlFlow("if (!$N.equals($N.get($N)))", FIELD_CLASS_NAME, param_data, FIELD_KEY_CLASS_NAME)
+                .addStatement("return false")
+                .endControlFlow()
+                .addStatement("$T $N = ($T) $N.get($N)", TypeName.INT, variable_methodId, TypeName.INT, param_data, FIELD_KEY_METHOD_ID)
+                .addStatement("$T $N = $N.get()", targetInterface, variable_callback, field_callbackWeakReference)
+                .beginControlFlow("if ($N == null)", variable_callback)
+                .addStatement("return false")
+                .endControlFlow();
+
+        dispatchBuilder.beginControlFlow("switch ($N)", variable_methodId);
+
+        buildAllSwitchCase(dispatchBuilder, methodIdPairs, param_data, variable_callback);
+
+        dispatchBuilder.endControlFlow()
+                .addStatement("return false");
+
+        return builder.addMethod(dispatchBuilder.build())
+                .build();
+    }
+
+    private void buildAllSwitchCase(MethodSpec.Builder builder,
+                                    List<Pair<String, ExecutableElement>> methodIdPairs,
+                                    String param_data,
+                                    String variable_callback) {
+        for (Pair<String, ExecutableElement> methodPair : methodIdPairs) {
+            buildSwitchCase(builder, methodPair, param_data, variable_callback);
+        }
+    }
+
+    private void buildSwitchCase(MethodSpec.Builder builder,
+                                 Pair<String, ExecutableElement> methodPair,
+                                 String param_data,
+                                 String variable_callback) {
+        String methodId = methodPair.getKey();
+        ExecutableElement method = methodPair.getValue();
+
+        builder.addStatement("case $N:", methodId);
+
+        StringBuilder argsBuilder = new StringBuilder();
+        for (VariableElement param : method.getParameters()) {
+            String variable_name = methodId + "_" + param.getSimpleName();
+            argsBuilder.append(variable_name)
+                    .append(",");
+            builder.addStatement("$T $N = ($T) $N.get($S)", param.asType(), variable_name, param.asType(), param_data, param.getSimpleName());
+        }
+
+        String args = "";
+
+        if (argsBuilder.length() > 0) {
+            args = argsBuilder.substring(0, argsBuilder.length() - 1/*去掉参数列表中最后一个多余的逗号*/);
+        }
+
+        builder.addStatement("$N.$N(" + args + ")", variable_callback, method.getSimpleName())
+                .addStatement("return true");
     }
 }
