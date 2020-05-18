@@ -13,7 +13,7 @@ public interface Duck extends Bird {
 
 // Generated:
 //
-// package channel.helper.test;
+//package channel.helper.test;
 //
 //import channel.helper.Pipe;
 //
@@ -81,7 +81,7 @@ public interface Duck extends Bird {
 //        }
 //    }
 //
-//    public static class Dispatcher<T> {
+//    public static class Dispatcher<T> implements channel.helper.Dispatcher {
 //        private Pipe<T> pipe;
 //
 //        private final WeakReference<Duck> callbackWeakReference;
@@ -95,6 +95,7 @@ public interface Duck extends Bird {
 //            this.callbackWeakReference = new WeakReference<>(callback);
 //        }
 //
+//        @Override
 //        public boolean dispatch(Map<String, Object> data) {
 //            if (!CLASS_NAME.equals(data.get(KEY_CLASS_NAME))) {
 //                return false;
