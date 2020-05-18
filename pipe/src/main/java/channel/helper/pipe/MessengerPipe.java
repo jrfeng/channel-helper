@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import channel.helper.Dispatcher;
-import channel.helper.Pipe;
+import channel.helper.Emitter;
 
 /**
  * Messenger Pipe.
@@ -55,7 +55,7 @@ import channel.helper.Pipe;
  *     <b>See Method: <a href="https://developer.android.google.cn/reference/android/os/Parcel?hl=en#writeValue(java.lang.Object)">Parcel#writeValue (Object v)</a></b>
  * </ul>
  */
-public class MessengerPipe extends Handler implements Pipe<Message> {
+public class MessengerPipe extends Handler implements Emitter {
     private static final String TAG = "MessengerPipe";
 
     private Messenger mMessenger;
@@ -92,7 +92,7 @@ public class MessengerPipe extends Handler implements Pipe<Message> {
     }
 
     @Override
-    public void emitData(Map<String, Object> data) {
+    public void emit(Map<String, Object> data) {
         if (mDispatcher) {
             Log.e(TAG, "The current MessengerPipe can only be a dispatcher.");
             return;
@@ -108,8 +108,7 @@ public class MessengerPipe extends Handler implements Pipe<Message> {
         }
     }
 
-    @Override
-    public Map<String, Object> getData(Message dataWrapper) {
+    private Map<String, Object> getData(Message dataWrapper) {
         if (!mDispatcher) {
             Log.e(TAG, "The current MessengerPipe can only be a emitter.");
             return new HashMap<>();

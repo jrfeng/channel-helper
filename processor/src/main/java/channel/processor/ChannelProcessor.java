@@ -2,11 +2,11 @@ package channel.processor;
 
 import channel.helper.Channel;
 import channel.helper.Dispatcher;
+import channel.helper.Emitter;
 import channel.helper.ParamInspector;
 
 import com.squareup.javapoet.*;
 
-import channel.helper.Pipe;
 import javafx.util.Pair;
 
 import javax.annotation.processing.*;
@@ -183,6 +183,7 @@ public class ChannelProcessor extends AbstractProcessor {
                 .build();
 
         TypeSpec.Builder builder = TypeSpec.classBuilder(name)
+                .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
                 .addModifiers(Modifier.PUBLIC)
                 .addField(KEY_CLASS_NAME)
                 .addField(KEY_METHOD_ID)
@@ -211,30 +212,27 @@ public class ChannelProcessor extends AbstractProcessor {
     }
 
     private TypeSpec buildEmitter(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
-        TypeVariableName T = TypeVariableName.get("T");
-
         TypeSpec.Builder builder = TypeSpec.classBuilder("Emitter")
-                .addTypeVariable(T)
                 .addSuperinterface(targetInterface.asType())
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
 
-        ParameterizedTypeName Pipe_T = ParameterizedTypeName.get(ClassName.get(Pipe.class), T);
+        ClassName Emitter = ClassName.get(Emitter.class);
 
         // field
-        final String field_pipe = "pipe";
+        final String field_emitter = "emitter";
 
-        FieldSpec pipe = FieldSpec.builder(Pipe_T, field_pipe, Modifier.PRIVATE)
+        FieldSpec emitter = FieldSpec.builder(Emitter, field_emitter, Modifier.PRIVATE)
                 .build();
 
-        builder.addField(pipe);
+        builder.addField(emitter);
 
         // constructor
-        final String param_pipe = "pipe";
+        final String param_emitter = "emitter";
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(Pipe_T, param_pipe)
-                .addStatement("this.$N = $N", field_pipe, param_pipe)
+                .addParameter(Emitter, param_emitter)
+                .addStatement("this.$N = $N", field_emitter, param_emitter)
                 .build();
 
         builder.addMethod(constructor);
@@ -258,7 +256,7 @@ public class ChannelProcessor extends AbstractProcessor {
                 .addParameter(type_args, param_args)
                 .addStatement("$N.put($N, $N)", param_args, FIELD_KEY_CLASS_NAME, FIELD_CLASS_NAME)
                 .addStatement("$N.put($N, $N)", param_args, FIELD_KEY_METHOD_ID, param_id)
-                .addStatement("$N.emitData($N)", field_pipe, param_args)
+                .addStatement("$N.emit($N)", field_emitter, param_args)
                 .build();
 
         builder.addMethod(sendMessage);
@@ -298,12 +296,6 @@ public class ChannelProcessor extends AbstractProcessor {
     }
 
     private TypeSpec buildDispatcher(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
-        // T
-        TypeVariableName T = TypeVariableName.get("T");
-
-        // Pipe<T>
-        ParameterizedTypeName Pipe_T = ParameterizedTypeName.get(ClassName.get(Pipe.class), T);
-
         // WeakReference<targetInterface>
         ParameterizedTypeName WeakReference_targetInterface = ParameterizedTypeName.get(
                 ClassName.get(WeakReference.class), ClassName.get(targetInterface));
@@ -318,41 +310,28 @@ public class ChannelProcessor extends AbstractProcessor {
         // class: Dispatcher
         TypeSpec.Builder builder = TypeSpec.classBuilder("Dispatcher")
                 .addSuperinterface(ClassName.get(Dispatcher.class))
-                .addTypeVariable(T)
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
 
         // field
-        final String field_pipe = "pipe";
         final String field_callbackWeakReference = "callbackWeakReference";
 
-        FieldSpec pipe = FieldSpec.builder(Pipe_T, field_pipe, Modifier.PRIVATE)
-                .build();
         FieldSpec callbackWeakReference = FieldSpec.builder(WeakReference_targetInterface, field_callbackWeakReference)
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                 .build();
 
-        builder.addField(pipe)
-                .addField(callbackWeakReference);
+        builder.addField(callbackWeakReference);
 
         // constructor
         final String param_callback = "callback";
         final String param_pipe = "pipe";
 
-        MethodSpec constructor1 = MethodSpec.constructorBuilder()
+        MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(targetInterface), param_callback)
-                .addStatement("this.$N = new $T<>($N)", field_callbackWeakReference, WeakReference.class, param_callback)
-                .build();
-        MethodSpec constructor2 = MethodSpec.constructorBuilder()
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(Pipe_T, field_pipe)
-                .addParameter(ClassName.get(targetInterface), param_callback)
-                .addStatement("this.$N = $N", field_pipe, param_pipe)
                 .addStatement("this.$N = new $T<>($N)", field_callbackWeakReference, WeakReference.class, param_callback)
                 .build();
 
-        builder.addMethod(constructor1)
-                .addMethod(constructor2);
+        builder.addMethod(constructor);
 
         // override: pubic boolean dispatch(Map<String, Object> data)
         final String method_dispatch = "dispatch";

@@ -12,9 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import channel.helper.Dispatcher;
-import channel.helper.Pipe;
+import channel.helper.Emitter;
 
-public class HandlerPipe extends Handler implements Pipe<Message> {
+public class HandlerPipe extends Handler implements Emitter {
     private static final String TAG = "HandlerPipe";
     private final WeakReference<Dispatcher> mDispatcherWeakReference;
 
@@ -28,7 +28,7 @@ public class HandlerPipe extends Handler implements Pipe<Message> {
     }
 
     @Override
-    public void emitData(Map<String, Object> data) {
+    public void emit(Map<String, Object> data) {
         Message message = Message.obtain();
         message.obj = data;
         sendMessage(message);
@@ -44,8 +44,7 @@ public class HandlerPipe extends Handler implements Pipe<Message> {
         dispatcher.dispatch(getData(msg));
     }
 
-    @Override
-    public Map<String, Object> getData(Message dataWrapper) {
+    private Map<String, Object> getData(Message dataWrapper) {
         if (dataWrapper.obj == null) {
             Log.d(TAG, "dataWrapper is empty.");
             return new HashMap<>();
