@@ -17,9 +17,9 @@ allprojects {
 
 ```groovy
 dependencies {
-    implementation 'com.github.jrfeng.channel-helper:helper:1.0.1'
-    implementation 'com.github.jrfeng.channel-helper:pipe:1.0.1'
-    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.0.1'
+    implementation 'com.github.jrfeng.channel-helper:helper:1.0.2'
+    implementation 'com.github.jrfeng.channel-helper:pipe:1.0.2'
+    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.0.2'
 }
 ```
 
@@ -74,17 +74,20 @@ public class DuckChannel {
 
     private static final int METHOD_ID_4 = 4;
 
-    public static class Emitter<T> implements Duck {
-        private Pipe<T> pipe;
+    private DuckChannel() {
+    }
 
-        public Emitter(Pipe<T> pipe) {
-            this.pipe = pipe;
+    public static class Emitter implements Duck {
+        private channel.helper.Emitter emitter;
+
+        public Emitter(channel.helper.Emitter emitter) {
+            this.emitter = emitter;
         }
 
         private void sendMessage(int id, Map<String, Object> args) {
             args.put(KEY_CLASS_NAME, CLASS_NAME);
             args.put(KEY_METHOD_ID, id);
-            pipe.emitData(args);
+            emitter.emit(args);
         }
 
         @Override
@@ -116,17 +119,10 @@ public class DuckChannel {
         }
     }
 
-    public static class Dispatcher<T> implements channel.helper.Dispatcher {
-        private Pipe<T> pipe;
-
+    public static class Dispatcher implements channel.helper.Dispatcher {
         private final WeakReference<Duck> callbackWeakReference;
 
         public Dispatcher(Duck callback) {
-            this.callbackWeakReference = new WeakReference<>(callback);
-        }
-
-        public Dispatcher(Pipe<T> pipe, Duck callback) {
-            this.pipe = pipe;
             this.callbackWeakReference = new WeakReference<>(callback);
         }
 
@@ -195,7 +191,7 @@ Handler and Messenger easily(don't worry about memory leaks).
 
 ```java
 // Use with HandlerPipe
-DuckChannel.Dispatcher<Message> dispatcher = new DuckChannel.Dispatcher<>(new Duck() {
+DuckChannel.Dispatcher dispatcher = new DuckChannel.Dispatcher<>(new Duck() {
     @Override
     public void eat() {
         Log.d("App", "eat");
@@ -218,7 +214,7 @@ DuckChannel.Dispatcher<Message> dispatcher = new DuckChannel.Dispatcher<>(new Du
 });
 
 HandlerPipe handlerPipe = new HandlerPipe(dispatcher);
-DuckChannel.Emitter<Message> emitter = new DuckChannel.Emitter<>(handlerPipe);
+DuckChannel.Emitter emitter = new DuckChannel.Emitter(handlerPipe);
 
 emitter.eat();          // output: eat
 emitter.quack(8);       // output: quack: {voice:8}
@@ -233,12 +229,12 @@ Service:
 ```java
 public class TestService extends Service {
     private MessengerPipe mMessengerPipe;
-    private DuckChannel.Dispatcher<Message> mDispatcher;
+    private DuckChannel.Dispatcher mDispatcher;
     
     @Override
     public void onCreate() {
         super.onCreate();
-        mDispatcher = new DuckChannel.Dispatcher<>(new Duck() {
+        mDispatcher = new DuckChannel.Dispatcher(new Duck() {
             @Override
             public void eat() {
                 // ...
@@ -276,14 +272,14 @@ ServiceConnection:
 ```java
 public class TestServiceConnection implements ServiceConnection {
     private MessengerPipe mMessengerPipe;
-    private DuckChannel.Emitter<Message> mEmitter;
+    private DuckChannel.Emitter mEmitter;
     
     private boolean mConnected;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         mMessengerPipe = new MessengerPipe(service);
-        mEmitter = new DuckChannel.Emitter<>(mMessengerPipe);
+        mEmitter = new DuckChannel.Emitter(mMessengerPipe);
         mConnected = true;
         
         test();
@@ -314,18 +310,18 @@ We can use static method `DispatcherUtil.merge(Dispacher dispatcher, Dispacher..
 **`Example`:**
 
 ```java
-DuckChannel.Dispatcher<Message> duckDispatcher = new DuckChannel.Dispatcher(/*...*/);
-ChickenChannel.Dispatcher<Message> chickenDispatcher = new ChickenChannel.Dispatcher(/*...*/);
+DuckChannel.Dispatcher duckDispatcher = new DuckChannel.Dispatcher(new Duck() {/*...*/});
+ChickenChannel.Dispatcher chickenDispatcher = new ChickenChannel.Dispatcher(new Chicken() {/*...*/});
 
 // merge multiple dispatcher
-Dispatcher<Message> mergeDispatcher = DispatcherUtil.merge(duckDispatcher, chickenDispatcher);
+Dispatcher mergeDispatcher = DispatcherUtil.merge(duckDispatcher, chickenDispatcher);
 
 // pipe
 HandlerPipe handlerPipe = new HandlerPipe(mergeDispatcher);
 
 // emitter: share handlerPipe
-DuckChannel.Emitter<Message> duckDispatcher = new DuckChannel.Emitter(handlerPipe);
-ChickenChannel.Emitter<Message> chickenDispatcher = new ChickenChannel.Emitter(handlerPipe);
+DuckChannel.Emitter duckEmitter = new DuckChannel.Emitter(handlerPipe/*share handlerPipe*/);
+ChickenChannel.Emitter chickenEmitter = new ChickenChannel.Emitter(handlerPipe/*share handlerPipe*/);
 ```
 
 ## LICENSE
