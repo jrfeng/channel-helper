@@ -401,7 +401,7 @@ public class ChannelProcessor extends AbstractProcessor {
         String methodId = methodPair.getKey();
         ExecutableElement method = methodPair.getValue();
 
-        builder.addStatement("case $N:", methodId);
+        builder.addCode("case $N:\n", methodId);
 
         StringBuilder argsBuilder = new StringBuilder();
         for (VariableElement param : method.getParameters()) {
