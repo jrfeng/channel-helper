@@ -177,7 +177,7 @@ Of course, you also can custom the name of generate helper class. example:
 
 ```java
 @Channel(name="CustomName")
-public interface Duck extends Bird {
+public interface Duck {
     // ...
 }
 ```
