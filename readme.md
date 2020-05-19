@@ -30,7 +30,7 @@ dependencies {
 **Warning! return type must be `void`.**
 
 ```java
-public interface Duck extends Bird {
+public interface Duck {
     void eat();
 
     void quack(int voice);
@@ -47,7 +47,7 @@ public interface Duck extends Bird {
 import channel.helper.Channel;
 
 @Channel
-public interface Duck extends Bird {
+public interface Duck {
     void eat();
 
     void quack(int voice);
