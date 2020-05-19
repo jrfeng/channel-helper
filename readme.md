@@ -191,7 +191,7 @@ Handler and Messenger easily(don't worry about memory leaks).
 
 ```java
 // Use with HandlerPipe
-DuckChannel.Dispatcher dispatcher = new DuckChannel.Dispatcher<>(new Duck() {
+DuckChannel.Dispatcher dispatcher = new DuckChannel.Dispatcher(new Duck() {
     @Override
     public void eat() {
         Log.d("App", "eat");
