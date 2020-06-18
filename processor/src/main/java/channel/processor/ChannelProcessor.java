@@ -7,6 +7,7 @@ import channel.helper.ParamInspector;
 
 import com.squareup.javapoet.*;
 
+import channel.helper.UseOrdinal;
 import javafx.util.Pair;
 
 import javax.annotation.processing.*;
@@ -288,11 +289,33 @@ public class ChannelProcessor extends AbstractProcessor {
 
         List<? extends VariableElement> params = method.getParameters();
         for (VariableElement param : params) {
+            if (useEnumOrdinal(param)) {
+                builder.addStatement("$N.put($S, $N.ordinal())", variable_args, param.getSimpleName(), param.getSimpleName());
+                continue;
+            }
+
             builder.addStatement("$N.put($S, $N)", variable_args, param.getSimpleName(), param.getSimpleName());
         }
 
         return builder.addStatement("sendMessage($N, $N)", methodId, variable_args)
                 .build();
+    }
+
+    private boolean useEnumOrdinal(VariableElement param) {
+        return isEnum(param) && isAnnotatedWithUseOrdinal(param);
+    }
+
+    private boolean isEnum(VariableElement param) {
+        Element element = mTypes.asElement(param.asType());
+        if (element != null) {
+            return element.getKind() == ElementKind.ENUM;
+        }
+
+        return false;
+    }
+
+    private boolean isAnnotatedWithUseOrdinal(VariableElement param) {
+        return param.getAnnotation(UseOrdinal.class) != null;
     }
 
     private TypeSpec buildDispatcher(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
@@ -323,7 +346,6 @@ public class ChannelProcessor extends AbstractProcessor {
 
         // constructor
         final String param_callback = "callback";
-        final String param_pipe = "pipe";
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
@@ -387,7 +409,15 @@ public class ChannelProcessor extends AbstractProcessor {
             String variable_name = methodId + "_" + param.getSimpleName();
             argsBuilder.append(variable_name)
                     .append(",");
-            builder.addStatement("$T $N = ($T) $N.get($S)", param.asType(), variable_name, param.asType(), param_data, param.getSimpleName());
+
+            if (useEnumOrdinal(param)) {
+                builder.addStatement("$T $N = $T.values()[(int) $N.get($S)]",
+                        param.asType(), variable_name, param.asType(), param_data, param.getSimpleName());
+                continue;
+            }
+
+            builder.addStatement("$T $N = ($T) $N.get($S)",
+                    param.asType(), variable_name, param.asType(), param_data, param.getSimpleName());
         }
 
         String args = "";
