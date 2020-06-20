@@ -5,6 +5,7 @@ import channel.helper.Dispatcher;
 import channel.helper.Emitter;
 import channel.helper.ParamInspector;
 
+import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
 
 import channel.helper.UseOrdinal;
@@ -27,7 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@AutoService(Processor.class)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes({
         "channel.helper.Channel"
 })
