@@ -17,9 +17,9 @@ allprojects {
 
 ```groovy
 dependencies {
-    implementation 'com.github.jrfeng.channel-helper:helper:1.0.2'
-    implementation 'com.github.jrfeng.channel-helper:pipe:1.0.2'
-    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.0.2'
+    implementation 'com.github.jrfeng.channel-helper:helper:1.1.0'
+    implementation 'com.github.jrfeng.channel-helper:pipe:1.1.0'
+    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.1.0'
 }
 ```
 
@@ -58,142 +58,12 @@ public interface Duck {
 }
 ```
 
-**Step 3**. Build your project. Then, annotation processor will generate a helper class, example:
+**Step 3**. Build your project. Then, use `ChannelFactory` to create emitter and dispatcher.
+
+**Example 1**：
 
 ```java
-public class DuckChannel {
-    private static final String KEY_CLASS_NAME = "__class_name";
-
-    private static final String KEY_METHOD_ID = "__method_id";
-
-    private static final String CLASS_NAME = "channel.helper.test.Duck";
-
-    private static final int METHOD_ID_1 = 1;
-
-    private static final int METHOD_ID_2 = 2;
-
-    private static final int METHOD_ID_3 = 3;
-
-    private static final int METHOD_ID_4 = 4;
-
-    private DuckChannel() {
-    }
-
-    public static class Emitter implements Duck {
-        private channel.helper.Emitter emitter;
-
-        public Emitter(channel.helper.Emitter emitter) {
-            this.emitter = emitter;
-        }
-
-        private void sendMessage(int id, Map<String, Object> args) {
-            args.put(KEY_CLASS_NAME, CLASS_NAME);
-            args.put(KEY_METHOD_ID, id);
-            emitter.emit(args);
-        }
-
-        @Override
-        public void fly(int high, int speed) {
-            Map<String, Object> args = new HashMap<>();
-            args.put("high", high);
-            args.put("speed", speed);
-            sendMessage(METHOD_ID_1, args);
-        }
-
-        @Override
-        public void eat() {
-            Map<String, Object> args = new HashMap<>();
-            sendMessage(METHOD_ID_2, args);
-        }
-
-        @Override
-        public void quack(int voice) {
-            Map<String, Object> args = new HashMap<>();
-            args.put("voice", voice);
-            sendMessage(METHOD_ID_3, args);
-        }
-
-        @Override
-        public void swing(int speed) {
-            Map<String, Object> args = new HashMap<>();
-            args.put("speed", speed);
-            sendMessage(METHOD_ID_4, args);
-        }
-    }
-
-    public static class Dispatcher implements channel.helper.Dispatcher {
-        private final WeakReference<Duck> callbackWeakReference;
-
-        public Dispatcher(Duck callback) {
-            this.callbackWeakReference = new WeakReference<>(callback);
-        }
-
-        @Override
-        public boolean dispatch(Map<String, Object> data) {
-            if (!CLASS_NAME.equals(data.get(KEY_CLASS_NAME))) {
-                return false;
-            }
-            int methodId = (int) data.get(KEY_METHOD_ID);
-            Duck callback = callbackWeakReference.get();
-            if (callback == null) {
-                return false;
-            }
-            switch (methodId) {
-                case METHOD_ID_1:
-                    int METHOD_ID_1_high = (int) data.get("high");
-                    int METHOD_ID_1_speed = (int) data.get("speed");
-                    callback.fly(METHOD_ID_1_high, METHOD_ID_1_speed);
-                    return true;
-                case METHOD_ID_2:
-                    callback.eat();
-                    return true;
-                case METHOD_ID_3:
-                    int METHOD_ID_3_voice = (int) data.get("voice");
-                    callback.quack(METHOD_ID_3_voice);
-                    return true;
-                case METHOD_ID_4:
-                    int METHOD_ID_4_speed = (int) data.get("speed");
-                    callback.swing(METHOD_ID_4_speed);
-                    return true;
-            }
-            return false;
-        }
-    }
-}
-```
-
-The name of generated helper class is base on your interface. 
-
-**Format:**
-
-```text
-<interface_name>Channel
-```
-
-As shown in the example, Because the name of interface is `Duck`, so the name of generated helper 
-class is `DuckChannel`.
-
-Of course, you also can custom the name of generate helper class. example:
-
-```java
-@Channel(name="CustomName")
-public interface Duck {
-    // ...
-}
-```
-
-Then, then name of generated helper class will be `CustomName`.
-
-### Use generated helper class
-
-The generated helper class can be used with `HandlerPipe` and `MessengerPipe`, can help you use 
-Handler and Messenger easily(don't worry about memory leaks).
-
-**Example 1**: Use with `HandlerPipe`
-
-```java
-// Use with HandlerPipe
-DuckChannel.Dispatcher dispatcher = new DuckChannel.Dispatcher(new Duck() {
+Duck receiver = new Duck() {
     @Override
     public void eat() {
         Log.d("App", "eat");
@@ -213,10 +83,10 @@ DuckChannel.Dispatcher dispatcher = new DuckChannel.Dispatcher(new Duck() {
     public void fly(int high, int speed) {
         Log.d("App", "fly: {high:" + high + ", speed:" + speed + "}");
     }
-});
+};
 
-HandlerPipe handlerPipe = new HandlerPipe(dispatcher);
-DuckChannel.Emitter emitter = new DuckChannel.Emitter(handlerPipe);
+Dispatcher duckDispatcher = ChannelFactory.newDispatcher(Duck.class, receiver);
+Duck emitter = ChannelFactory.newEmitter(Duck.class, new HandlerPipe(duckDispatcher));
 
 emitter.eat();          // output: eat
 emitter.quack(8);       // output: quack: {voice:8}
@@ -224,41 +94,42 @@ emitter.fly(5, 12);     // output: fly: {high:5, speed:12}
 emitter.swing(7);       // output: swing: {speed:12}
 ```
 
-**Example 2**: Use with `MessengerPipe`
+**Example 2**: Use with `MessengerPipe` for `IPC`
 
 Service:
 
 ```java
 public class TestService extends Service {
     private MessengerPipe mMessengerPipe;
-    private DuckChannel.Dispatcher mDispatcher;
     
     @Override
     public void onCreate() {
         super.onCreate();
-        mDispatcher = new DuckChannel.Dispatcher(new Duck() {
+        ...
+        
+        Duck receiver = new Duck() {
             @Override
             public void eat() {
-                // ...
+                Log.d("App", "eat");
             }
 
             @Override
             public void quack(int voice) {
-                // ...
+                Log.d("App", "quack: {voice:" + voice + "}");
             }
 
             @Override
             public void swing(int speed) {
-                // ...
+                Log.d("App", "swing: {speed:" + speed + "}");
             }
 
             @Override
             public void fly(int high, int speed) {
-                // ...
+                Log.d("App", "fly: {high:" + high + ", speed:" + speed + "}");
             }
-        });
+        };
         
-        mMessengerPipe = new MessengerPipe(mDispatcher);
+        mMessengerPipe = new MessengerPipe(receiver);
     }
 
     @Nullable
@@ -274,14 +145,14 @@ ServiceConnection:
 ```java
 public class TestServiceConnection implements ServiceConnection {
     private MessengerPipe mMessengerPipe;
-    private DuckChannel.Emitter mEmitter;
+    private Duck mEmitter;
     
     private boolean mConnected;
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         mMessengerPipe = new MessengerPipe(service);
-        mEmitter = new DuckChannel.Emitter(mMessengerPipe);
+        mEmitter = ChannelFactory.newEmitter(Duck.class, mMessengerPipe);
         mConnected = true;
         
         test();
@@ -305,25 +176,48 @@ public class TestServiceConnection implements ServiceConnection {
 }
 ```
 
-## Merge multiple dispatcher 
+**Warnning! if you use `MessengerPipe` for `IPC`, Make sure the parameter type of the method meets the requirements of [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)).**
+
+## Other
+
+### Use enum ordinal
+
+You can use the `@UseOrdinal` annotation to label an enumeration type parameter, this will replaces enumeration values with it ordinal integer. This is helpful for `IPC` because `Parcel` does not support enumeration types.
+
+**Example:**
+
+```java
+public enum Color {
+    REG, GREEN, BLUE
+}
+
+public interface Foo {
+    void setColor(@UseOrdinal Color color);
+}
+```
+
+### Merge multiple dispatcher 
 
 We can use static method `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` multiple dispatcher.
 
 **`Example`:**
 
 ```java
-DuckChannel.Dispatcher duckDispatcher = new DuckChannel.Dispatcher(new Duck() {/*...*/});
-ChickenChannel.Dispatcher chickenDispatcher = new ChickenChannel.Dispatcher(new Chicken() {/*...*/});
+Duck duckReceiver = new Duck() {/*...*/};
+Chicken chickenReceiver = new Chicken() {/*...*/});
 
 // merge multiple dispatcher
-Dispatcher mergeDispatcher = DispatcherUtil.merge(duckDispatcher, chickenDispatcher);
+Dispatcher mergeDispatcher = DispatcherUtil.merge(
+        ChannelFactory.newDispatcher(Duck.class, duckReceiver),
+        ChannelFactory.newDispatcher(Chicken.class, chickenReceiver)
+    );
 
 // pipe
 HandlerPipe handlerPipe = new HandlerPipe(mergeDispatcher);
 
-// emitter: share handlerPipe
-DuckChannel.Emitter duckEmitter = new DuckChannel.Emitter(handlerPipe/*share handlerPipe*/);
-ChickenChannel.Emitter chickenEmitter = new ChickenChannel.Emitter(handlerPipe/*share handlerPipe*/);
+// create emitter: share handlerPipe
+Duck duckEmitter = ChannelFactory.newEmitter(Duck.class, handlerPipe);
+Chicken chickenEmitter = ChannelFactory.newEmitter(Chicken.class, handlerPipe);
 ```
 
 ## LICENSE
