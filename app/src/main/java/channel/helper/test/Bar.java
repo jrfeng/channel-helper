@@ -27,4 +27,10 @@ public interface Bar extends Foo {
 
     void manyParam(byte aByte, short aShort, int aInt, long aLong, float aFloat, double aDouble,
                    String aString, TimeUnit aEnum1, @UseOrdinal TimeUnit aEnum2);
+
+    // DEBUG
+    @Channel
+    interface Inner {
+        void test();
+    }
 }

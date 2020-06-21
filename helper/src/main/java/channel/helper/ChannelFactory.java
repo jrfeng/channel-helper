@@ -9,9 +9,7 @@ public class ChannelFactory {
 
     @SuppressWarnings("unchecked cast")
     public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {
-        String emitterName = clazz.getPackage().getName() + "."
-                + clazz.getSimpleName()
-                + "__ChannelWrapper$Emitter";
+        String emitterName = clazz.getName() + "__ChannelWrapper$Emitter";
 
         try {
             Class<? extends T> emitter = (Class<? extends T>) Class.forName(emitterName);
@@ -24,9 +22,7 @@ public class ChannelFactory {
 
     @SuppressWarnings("unchecked cast")
     public static <T> Dispatcher newDispatcher(Class<T> clazz, T receiver) {
-        String dispatcherName = clazz.getPackage().getName() + "."
-                + clazz.getSimpleName()
-                + "__ChannelWrapper$Dispatcher";
+        String dispatcherName = clazz.getName() + "__ChannelWrapper$Dispatcher";
 
         try {
             Class<? extends Dispatcher> dispatcher = (Class<? extends Dispatcher>) Class.forName(dispatcherName);

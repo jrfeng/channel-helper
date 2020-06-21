@@ -170,7 +170,7 @@ public class ChannelProcessor extends AbstractProcessor {
     }
 
     private TypeSpec buildChannelWrapper(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
-        String wrapperName = targetInterface.getSimpleName() + "__ChannelWrapper";
+        String wrapperName = getChannelWrapperName(targetInterface) + "__ChannelWrapper";
 
         ClassName string = ClassName.get("java.lang", "String");
         FieldSpec KEY_CLASS_NAME = FieldSpec.builder(string, FIELD_KEY_CLASS_NAME, Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
@@ -199,6 +199,13 @@ public class ChannelProcessor extends AbstractProcessor {
                 .addFields(generateMethodIdField(methodIdPairs));
 
         return builder.build();
+    }
+
+    private String getChannelWrapperName(TypeElement targetInterface) {
+        String packageName = mElements.getPackageOf(targetInterface).getQualifiedName().toString();
+        String qualifiedName = targetInterface.getQualifiedName().toString();
+
+        return qualifiedName.substring(packageName.length() + 1).replace('.', '$');
     }
 
     private List<FieldSpec> generateMethodIdField(List<Pair<String, ExecutableElement>> methodIdPairs) {
