@@ -27,6 +27,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation project(path: ":helper")
+    implementation project(path: ":pipe")
     annotationProcessor project(path: ":processor")
 
     implementation 'androidx.appcompat:appcompat:1.1.0'

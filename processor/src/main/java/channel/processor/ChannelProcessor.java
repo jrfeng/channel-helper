@@ -89,7 +89,7 @@ public class ChannelProcessor extends AbstractProcessor {
 
         List<Pair<String, ExecutableElement>> methodIdPairs = generateAllMethodId(methods);
 
-        TypeSpec channelWrapperType = buildChannelWrapper(channel.name(), targetInterface, methodIdPairs);
+        TypeSpec channelWrapperType = buildChannelWrapper(targetInterface, methodIdPairs);
 
         writeJavaFile(channelWrapperType, targetInterface);
     }
@@ -169,10 +169,8 @@ public class ChannelProcessor extends AbstractProcessor {
         return methodIdPairs;
     }
 
-    private TypeSpec buildChannelWrapper(String name, TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
-        if ("".equals(name)) {
-            name = targetInterface.getSimpleName() + "Channel";
-        }
+    private TypeSpec buildChannelWrapper(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
+        String wrapperName = targetInterface.getSimpleName() + "__ChannelWrapper";
 
         ClassName string = ClassName.get("java.lang", "String");
         FieldSpec KEY_CLASS_NAME = FieldSpec.builder(string, FIELD_KEY_CLASS_NAME, Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
@@ -185,9 +183,14 @@ public class ChannelProcessor extends AbstractProcessor {
                 .initializer("$S", targetInterface.getQualifiedName())
                 .build();
 
-        TypeSpec.Builder builder = TypeSpec.classBuilder(name)
-                .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
-                .addModifiers(Modifier.PUBLIC)
+        // private default constructor
+        MethodSpec defaultConstructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE)
+                .addStatement("throw new AssertionError()")
+                .build();
+
+        TypeSpec.Builder builder = TypeSpec.classBuilder(wrapperName)
+                .addMethod(defaultConstructor)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addField(KEY_CLASS_NAME)
                 .addField(KEY_METHOD_ID)
                 .addField(CLASS_NAME)
@@ -217,7 +220,7 @@ public class ChannelProcessor extends AbstractProcessor {
     private TypeSpec buildEmitter(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
         TypeSpec.Builder builder = TypeSpec.classBuilder("Emitter")
                 .addSuperinterface(targetInterface.asType())
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
 
         ClassName Emitter = ClassName.get(Emitter.class);
 
@@ -335,7 +338,7 @@ public class ChannelProcessor extends AbstractProcessor {
         // class: Dispatcher
         TypeSpec.Builder builder = TypeSpec.classBuilder("Dispatcher")
                 .addSuperinterface(ClassName.get(Dispatcher.class))
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC);
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
 
         // field
         final String field_callbackWeakReference = "callbackWeakReference";
