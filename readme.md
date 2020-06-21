@@ -17,9 +17,9 @@ allprojects {
 
 ```groovy
 dependencies {
-    implementation 'com.github.jrfeng.channel-helper:helper:1.1.1'
-    implementation 'com.github.jrfeng.channel-helper:pipe:1.1.1'
-    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.1.1'
+    implementation 'com.github.jrfeng.channel-helper:helper:1.1.2'
+    implementation 'com.github.jrfeng.channel-helper:pipe:1.1.2'
+    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.1.2'
 }
 ```
 
