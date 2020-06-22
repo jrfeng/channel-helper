@@ -2,7 +2,7 @@ package channel.helper;
 
 import java.lang.reflect.Constructor;
 
-public class ChannelFactory {
+public final class ChannelFactory {
     private ChannelFactory() {
         throw new AssertionError();
     }
