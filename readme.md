@@ -58,9 +58,22 @@ public interface Duck {
 }
 ```
 
-**Step 3**. Build your project. Then, use `ChannelFactory` to create emitter and dispatcher.
+**Step 3**. Use `ChannelFactory` to create emitter and dispatcher.
 
-**Example 1**：
+**`ChannelFactory`：**
+
+```java
+public final class ChannelFactory {
+	...
+	// Emitter Factory
+    public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {...}
+
+    // Dispatcher Factory
+    public static <T> Dispatcher newDispatcher(Class<T> clazz, T receiver) {...}
+}
+```
+
+**Example 1**： Use with `HandlerPipe`
 
 ```java
 Duck receiver = new Duck() {
