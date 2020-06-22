@@ -64,8 +64,8 @@ public interface Duck {
 
 ```java
 public final class ChannelFactory {
-	...
-	// Emitter Factory
+    ...
+    // Emitter Factory
     public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {...}
 
     // Dispatcher Factory
