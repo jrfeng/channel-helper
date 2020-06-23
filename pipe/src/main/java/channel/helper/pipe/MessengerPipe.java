@@ -66,10 +66,11 @@ public class MessengerPipe extends Handler implements Emitter {
         mMessenger = new Messenger(binder);
     }
 
+    /**
+     * Use Main Looper
+     */
     public MessengerPipe(Dispatcher dispatcher) {
-        mDispatcher = true;
-        mMessenger = new Messenger(this);
-        mDispatcherWeakReference = new WeakReference<>(dispatcher);
+        this(Looper.getMainLooper(), dispatcher);
     }
 
     public MessengerPipe(Looper looper, Dispatcher dispatcher) {

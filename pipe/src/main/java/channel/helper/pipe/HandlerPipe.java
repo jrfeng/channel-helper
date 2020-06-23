@@ -18,8 +18,11 @@ public class HandlerPipe extends Handler implements Emitter {
     private static final String TAG = "HandlerPipe";
     private final WeakReference<Dispatcher> mDispatcherWeakReference;
 
+    /**
+     * Use Main Looper
+     */
     public HandlerPipe(Dispatcher dispatcher) {
-        mDispatcherWeakReference = new WeakReference<>(dispatcher);
+        this(Looper.getMainLooper(), dispatcher);
     }
 
     public HandlerPipe(Looper looper, Dispatcher dispatcher) {

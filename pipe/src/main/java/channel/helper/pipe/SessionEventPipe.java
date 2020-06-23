@@ -8,6 +8,9 @@ import java.util.Map;
 import channel.helper.Dispatcher;
 import channel.helper.Emitter;
 
+/**
+ * Help handle MediaSession session event easily.
+ */
 public final class SessionEventPipe implements Emitter {
     private static final String SESSION_EVENT = "channel.helper.pipe.SESSION_EVENT";
     private static final String KET_EXTRA = "extra";
@@ -15,10 +18,16 @@ public final class SessionEventPipe implements Emitter {
     private MediaSessionCompat mMediaSessionCompat;
     private Dispatcher mDispatcher;
 
+    /**
+     * For {@link MediaSessionCompat#sendSessionEvent(String, Bundle)}
+     */
     public SessionEventPipe(MediaSessionCompat mediaSessionCompat) {
         mMediaSessionCompat = mediaSessionCompat;
     }
 
+    /**
+     * For {@link android.support.v4.media.session.MediaControllerCompat.Callback#onSessionEvent(String, Bundle)}
+     */
     public SessionEventPipe(Dispatcher dispatcher) {
         mDispatcher = dispatcher;
     }
@@ -32,7 +41,8 @@ public final class SessionEventPipe implements Emitter {
     }
 
     /**
-     * Dispatch session event. Invoke at {@link android.support.v4.media.session.MediaControllerCompat.Callback#onSessionEvent(String, Bundle)}
+     * Dispatch session event. Invoke this method at
+     * {@link android.support.v4.media.session.MediaControllerCompat.Callback#onSessionEvent(String, Bundle)}
      */
     public boolean dispatch(String action, Bundle data) {
         if (!SESSION_EVENT.equals(action)) {

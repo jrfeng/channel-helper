@@ -8,6 +8,9 @@ import java.util.Map;
 import channel.helper.Dispatcher;
 import channel.helper.Emitter;
 
+/**
+ * Help handle MediaSession custom action easily.
+ */
 public final class CustomActionPipe implements Emitter {
     private static final String ACTION = "channel.helper.pipe.CUSTOM_ACTION";
     private static final String KEY_DATA = "data";
@@ -23,16 +26,23 @@ public final class CustomActionPipe implements Emitter {
         mTransportControls.sendCustomAction(ACTION, bundle);
     }
 
+    /**
+     * For {@link MediaControllerCompat.TransportControls#sendCustomAction(String, Bundle)}
+     */
     public CustomActionPipe(MediaControllerCompat.TransportControls transportControls) {
         mTransportControls = transportControls;
     }
 
+    /**
+     * For {@link android.support.v4.media.session.MediaSessionCompat.Callback#onCustomAction(String, Bundle)}
+     */
     public CustomActionPipe(Dispatcher dispatcher) {
         mDispatcher = dispatcher;
     }
 
     /**
-     * Dispatch custom action. Invoke at {@link android.support.v4.media.session.MediaSessionCompat.Callback#onCustomAction(String, Bundle)}.
+     * Dispatch custom action. Invoke this method at
+     * {@link android.support.v4.media.session.MediaSessionCompat.Callback#onCustomAction(String, Bundle)}.
      */
     public boolean dispatch(String action, Bundle data) {
         if (!ACTION.equals(action)) {
