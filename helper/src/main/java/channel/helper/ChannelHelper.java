@@ -2,14 +2,14 @@ package channel.helper;
 
 import java.lang.reflect.Constructor;
 
-public final class ChannelFactory {
-    private ChannelFactory() {
+public final class ChannelHelper {
+    private ChannelHelper() {
         throw new AssertionError();
     }
 
     @SuppressWarnings("unchecked cast")
     public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {
-        String emitterName = clazz.getName() + "__ChannelWrapper$Emitter";
+        String emitterName = clazz.getName() + "__ChannelHelper$Emitter";
 
         try {
             Class<? extends T> emitter = (Class<? extends T>) Class.forName(emitterName);
@@ -22,7 +22,7 @@ public final class ChannelFactory {
 
     @SuppressWarnings("unchecked cast")
     public static <T> Dispatcher newDispatcher(Class<T> clazz, T receiver) {
-        String dispatcherName = clazz.getName() + "__ChannelWrapper$Dispatcher";
+        String dispatcherName = clazz.getName() + "__ChannelHelper$Dispatcher";
 
         try {
             Class<? extends Dispatcher> dispatcher = (Class<? extends Dispatcher>) Class.forName(dispatcherName);

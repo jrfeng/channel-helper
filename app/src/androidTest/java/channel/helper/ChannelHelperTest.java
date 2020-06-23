@@ -16,7 +16,7 @@ import channel.helper.pipe.HandlerPipe;
 import channel.helper.test.Bar;
 
 @RunWith(AndroidJUnit4.class)
-public class ChannelFactoryTest {
+public class ChannelHelperTest {
     @Test(timeout = 3000)
     public void factoryTest() throws InterruptedException {
         final String value = "Hello";
@@ -84,8 +84,8 @@ public class ChannelFactoryTest {
         HandlerThread handlerThread = new HandlerThread("ChannelFactoryTest");
         handlerThread.start();
 
-        Dispatcher barDispatcher = ChannelFactory.newDispatcher(Bar.class, receiver);
-        Bar emitter = ChannelFactory.newEmitter(Bar.class, new HandlerPipe(handlerThread.getLooper(), barDispatcher));
+        Dispatcher barDispatcher = ChannelHelper.newDispatcher(Bar.class, receiver);
+        Bar emitter = ChannelHelper.newEmitter(Bar.class, new HandlerPipe(handlerThread.getLooper(), barDispatcher));
 
         emitter.stringParam(value);
 
