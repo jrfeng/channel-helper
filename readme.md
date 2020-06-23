@@ -205,9 +205,9 @@ CustomActionPipe pipe = new CustomActionPipe(mTransportControls);
 Duck emitter = ChannelHelper.newEmitter(Duck.class, pipe);
 
 emitter.eat();
-mEmitter.quack(8);
-mEmitter.fly(5, 12);
-mEmitter.swing(7);
+emitter.quack(8);
+emitter.fly(5, 12);
+emitter.swing(7);
 
 // MediaSessionCompat.Callback
 public class Callback extends MediaSessionCompat.Callback {
@@ -257,9 +257,9 @@ SessionEventPipe pipe = new SessionEventPipe(mMediaSessionCompat);
 Duck emitter = ChannelHelper.newEmitter(Duck.class, pipe);
 
 emitter.eat();
-mEmitter.quack(8);
-mEmitter.fly(5, 12);
-mEmitter.swing(7);
+emitter.quack(8);
+emitter.fly(5, 12);
+emitter.swing(7);
 
 // MediaControllerCompat.Callback
 public class Callback extends MediaControllerCompat.Callback {
