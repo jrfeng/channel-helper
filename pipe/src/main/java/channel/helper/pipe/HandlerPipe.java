@@ -44,6 +44,7 @@ public class HandlerPipe extends Handler implements Emitter {
         dispatcher.dispatch(getData(msg));
     }
 
+    @SuppressWarnings("unchecked cast")
     private Map<String, Object> getData(Message dataWrapper) {
         if (dataWrapper.obj == null) {
             Log.d(TAG, "dataWrapper is empty.");
