@@ -8,18 +8,18 @@ import java.util.Map;
 import channel.helper.Dispatcher;
 import channel.helper.Emitter;
 
-public final class SesseionEventPipe implements Emitter {
+public final class SessionEventPipe implements Emitter {
     private static final String SESSION_EVENT = "channel.helper.pipe.SESSION_EVENT";
     private static final String KET_EXTRA = "extra";
 
     private MediaSessionCompat mMediaSessionCompat;
     private Dispatcher mDispatcher;
 
-    public SesseionEventPipe(MediaSessionCompat mediaSessionCompat) {
+    public SessionEventPipe(MediaSessionCompat mediaSessionCompat) {
         mMediaSessionCompat = mediaSessionCompat;
     }
 
-    public SesseionEventPipe(Dispatcher dispatcher) {
+    public SessionEventPipe(Dispatcher dispatcher) {
         mDispatcher = dispatcher;
     }
 
