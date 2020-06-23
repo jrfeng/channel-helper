@@ -17,9 +17,9 @@ allprojects {
 
 ```groovy
 dependencies {
-    implementation 'com.github.jrfeng.channel-helper:helper:1.1.2'
-    implementation 'com.github.jrfeng.channel-helper:pipe:1.1.2'
-    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.1.2'
+    implementation 'com.github.jrfeng.channel-helper:helper:1.2.0'
+    implementation 'com.github.jrfeng.channel-helper:pipe:1.2.0'
+    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.2.0'
 }
 ```
 
@@ -58,12 +58,12 @@ public interface Duck {
 }
 ```
 
-**Step 3**. Use `ChannelFactory` to create emitter and dispatcher.
+**Step 3**. Use `ChannelHelper` to create emitter and dispatcher.
 
-**`ChannelFactory`：**
+**`ChannelHelper`：**
 
 ```java
-public final class ChannelFactory {
+public final class ChannelHelper {
     ...
     // Emitter Factory
     public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {...}
@@ -98,8 +98,8 @@ Duck receiver = new Duck() {
     }
 };
 
-Dispatcher duckDispatcher = ChannelFactory.newDispatcher(Duck.class, receiver);
-Duck emitter = ChannelFactory.newEmitter(Duck.class, new HandlerPipe(duckDispatcher));
+Dispatcher duckDispatcher = ChannelHelper.newDispatcher(Duck.class, receiver);
+Duck emitter = ChannelHelper.newEmitter(Duck.class, new HandlerPipe(duckDispatcher));
 
 emitter.eat();          // output: eat
 emitter.quack(8);       // output: quack: {voice:8}
@@ -142,7 +142,8 @@ public class TestService extends Service {
             }
         };
         
-        mMessengerPipe = new MessengerPipe(receiver);
+        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, receiver);
+        mMessengerPipe = new MessengerPipe(dispatcher);
     }
 
     @Nullable
@@ -165,7 +166,7 @@ public class TestServiceConnection implements ServiceConnection {
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         mMessengerPipe = new MessengerPipe(service);
-        mEmitter = ChannelFactory.newEmitter(Duck.class, mMessengerPipe);
+        mEmitter = ChannelHelper.newEmitter(Duck.class, mMessengerPipe);
         mConnected = true;
         
         test();
@@ -190,6 +191,117 @@ public class TestServiceConnection implements ServiceConnection {
 ```
 
 **Warnning! if you use `MessengerPipe` for `IPC`, Make sure the parameter type of the method meets the requirements of [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)).**
+
+**For MediaSession Framework：**
+
+* `CustomActionPipe`
+* `SessionEventPipe`
+
+**Example:**
+
+`CustomActionPipe`:
+
+```java
+// Sender
+CustomActionPipe pipe = new CustomActionPipe(mTransportControls);
+Duck emitter = ChannelHelper.newEmitter(Duck.class, pipe);
+
+emitter.eat();
+mEmitter.quack(8);
+mEmitter.fly(5, 12);
+mEmitter.swing(7);
+
+// MediaSessionCompat.Callback
+public class Callback extends MediaSessionCompat.Callback {
+    private CustomActionPipe mPipe; 
+
+    public Callback() {
+        Duck receiver = new Duck() {
+            @Override
+            public void eat() {
+                Log.d("App", "eat");
+            }
+
+            @Override
+            public void quack(int voice) {
+                Log.d("App", "quack: {voice:" + voice + "}");
+            }
+
+            @Override
+            public void swing(int speed) {
+                Log.d("App", "swing: {speed:" + speed + "}");
+            }
+
+            @Override
+            public void fly(int high, int speed) {
+                Log.d("App", "fly: {high:" + high + ", speed:" + speed + "}");
+            }
+        };
+
+        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, receiver);
+        mPipe = new CustomActionPipe(dispatcher);
+    }
+
+    ...
+
+    @Override
+    public void onCustomAction(String action, Bundle extras) {
+        mPipe.dispatch(action, extras);
+    }
+}
+```
+
+`SessionEventPipe`:
+
+```java
+// Sender
+SessionEventPipe pipe = new SessionEventPipe(mMediaSessionCompat);
+Duck emitter = ChannelHelper.newEmitter(Duck.class, pipe);
+
+emitter.eat();
+mEmitter.quack(8);
+mEmitter.fly(5, 12);
+mEmitter.swing(7);
+
+// MediaControllerCompat.Callback
+public class Callback extends MediaControllerCompat.Callback {
+    private SessionEventPipe mPipe;
+
+    public Callback() {
+        Duck receiver = new Duck() {
+            @Override
+            public void eat() {
+                Log.d("App", "eat");
+            }
+
+            @Override
+            public void quack(int voice) {
+                Log.d("App", "quack: {voice:" + voice + "}");
+            }
+
+            @Override
+            public void swing(int speed) {
+                Log.d("App", "swing: {speed:" + speed + "}");
+            }
+
+            @Override
+            public void fly(int high, int speed) {
+                Log.d("App", "fly: {high:" + high + ", speed:" + speed + "}");
+            }
+        };
+
+        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, receiver);
+        mPipe = new SessionEventPipe(dispatcher);
+    }
+
+    ...
+
+    @Override
+    public void onSessionEvent(String event, Bundle extras) {
+        mPipe.dispatch(event, extras);
+    }
+}
+```
 
 ## Other
 
@@ -221,16 +333,16 @@ Chicken chickenReceiver = new Chicken() {/*...*/});
 
 // merge multiple dispatcher
 Dispatcher mergeDispatcher = DispatcherUtil.merge(
-        ChannelFactory.newDispatcher(Duck.class, duckReceiver),
-        ChannelFactory.newDispatcher(Chicken.class, chickenReceiver)
+        ChannelHelper.newDispatcher(Duck.class, duckReceiver),
+        ChannelHelper.newDispatcher(Chicken.class, chickenReceiver)
     );
 
 // pipe
 HandlerPipe handlerPipe = new HandlerPipe(mergeDispatcher);
 
 // create emitter: share handlerPipe
-Duck duckEmitter = ChannelFactory.newEmitter(Duck.class, handlerPipe);
-Chicken chickenEmitter = ChannelFactory.newEmitter(Chicken.class, handlerPipe);
+Duck duckEmitter = ChannelHelper.newEmitter(Duck.class, handlerPipe);
+Chicken chickenEmitter = ChannelHelper.newEmitter(Chicken.class, handlerPipe);
 ```
 
 ## LICENSE
