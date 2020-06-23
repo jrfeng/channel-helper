@@ -192,14 +192,12 @@ public class TestServiceConnection implements ServiceConnection {
 
 **Warnning! if you use `MessengerPipe` for `IPC`, Make sure the parameter type of the method meets the requirements of [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)).**
 
-**For MediaSession Framework：**
+### MediaSession
 
-* `CustomActionPipe`
-* `SessionEventPipe`
+* `CustomActionPipe`: Help handle custom action.
+* `SessionEventPipe`: Help handle session event.
 
-**Example:**
-
-`CustomActionPipe`:
+**`CustomActionPipe` Example:**
 
 ```java
 // Sender
@@ -251,7 +249,7 @@ public class Callback extends MediaSessionCompat.Callback {
 }
 ```
 
-`SessionEventPipe`:
+**`SessionEventPipe` Example:**
 
 ```java
 // Sender
