@@ -5,8 +5,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -126,7 +124,7 @@ public class MessengerPipe extends Handler implements Emitter {
 
         MapWrapper mapWrapper = (MapWrapper) dataWrapper.obj;
 
-        return (Map<String, Object>) mapWrapper.getMap();
+        return mapWrapper.getMap();
     }
 
     public IBinder getBinder() {
@@ -141,41 +139,4 @@ public class MessengerPipe extends Handler implements Emitter {
         return mMessenger;
     }
 
-    private static class MapWrapper implements Parcelable {
-        private Map mMap;
-
-        MapWrapper(Map map) {
-            mMap = map;
-        }
-
-        private MapWrapper(Parcel in) {
-            mMap = in.readHashMap(Thread.currentThread().getContextClassLoader());
-        }
-
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            dest.writeMap(mMap);
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        public static final Creator<MapWrapper> CREATOR = new Creator<MapWrapper>() {
-            @Override
-            public MapWrapper createFromParcel(Parcel in) {
-                return new MapWrapper(in);
-            }
-
-            @Override
-            public MapWrapper[] newArray(int size) {
-                return new MapWrapper[size];
-            }
-        };
-
-        public Map getMap() {
-            return mMap;
-        }
-    }
 }
