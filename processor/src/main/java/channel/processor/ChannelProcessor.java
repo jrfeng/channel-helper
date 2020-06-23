@@ -89,9 +89,9 @@ public class ChannelProcessor extends AbstractProcessor {
 
         List<Pair<String, ExecutableElement>> methodIdPairs = generateAllMethodId(methods);
 
-        TypeSpec channelWrapperType = buildChannelWrapper(targetInterface, methodIdPairs);
+        TypeSpec channelHelperType = buildChannelHelper(targetInterface, methodIdPairs);
 
-        writeJavaFile(channelWrapperType, targetInterface);
+        writeJavaFile(channelHelperType, targetInterface);
     }
 
     private void writeJavaFile(TypeSpec typeSpec, TypeElement targetInterface) {
@@ -169,8 +169,8 @@ public class ChannelProcessor extends AbstractProcessor {
         return methodIdPairs;
     }
 
-    private TypeSpec buildChannelWrapper(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
-        String wrapperName = getChannelWrapperName(targetInterface) + "__ChannelHelper";
+    private TypeSpec buildChannelHelper(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
+        String helperName = getChannelHelperName(targetInterface) + "__ChannelHelper";
 
         ClassName string = ClassName.get("java.lang", "String");
         FieldSpec KEY_CLASS_NAME = FieldSpec.builder(string, FIELD_KEY_CLASS_NAME, Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
@@ -188,7 +188,7 @@ public class ChannelProcessor extends AbstractProcessor {
                 .addStatement("throw new AssertionError()")
                 .build();
 
-        TypeSpec.Builder builder = TypeSpec.classBuilder(wrapperName)
+        TypeSpec.Builder builder = TypeSpec.classBuilder(helperName)
                 .addMethod(defaultConstructor)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addField(KEY_CLASS_NAME)
@@ -201,7 +201,7 @@ public class ChannelProcessor extends AbstractProcessor {
         return builder.build();
     }
 
-    private String getChannelWrapperName(TypeElement targetInterface) {
+    private String getChannelHelperName(TypeElement targetInterface) {
         String packageName = mElements.getPackageOf(targetInterface).getQualifiedName().toString();
         String qualifiedName = targetInterface.getQualifiedName().toString();
 
