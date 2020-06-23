@@ -170,7 +170,7 @@ public class ChannelProcessor extends AbstractProcessor {
     }
 
     private TypeSpec buildChannelWrapper(TypeElement targetInterface, List<Pair<String, ExecutableElement>> methodIdPairs) {
-        String wrapperName = getChannelWrapperName(targetInterface) + "__ChannelWrapper";
+        String wrapperName = getChannelWrapperName(targetInterface) + "__ChannelHelper";
 
         ClassName string = ClassName.get("java.lang", "String");
         FieldSpec KEY_CLASS_NAME = FieldSpec.builder(string, FIELD_KEY_CLASS_NAME, Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
