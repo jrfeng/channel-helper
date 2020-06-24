@@ -9,6 +9,10 @@ public final class ChannelHelper {
 
     @SuppressWarnings("unchecked cast")
     public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {
+        if (pipe == null) {
+            throw new IllegalArgumentException("pipe is null");
+        }
+
         String emitterName = clazz.getName() + "__ChannelHelper$Emitter";
 
         try {
@@ -22,6 +26,10 @@ public final class ChannelHelper {
 
     @SuppressWarnings("unchecked cast")
     public static <T> Dispatcher newDispatcher(Class<T> clazz, T receiver) {
+        if (receiver == null) {
+            throw new IllegalArgumentException("receiver is null");
+        }
+
         String dispatcherName = clazz.getName() + "__ChannelHelper$Dispatcher";
 
         try {
