@@ -129,10 +129,6 @@ public class MessengerPipe extends Handler implements Emitter {
     }
 
     public IBinder getBinder() {
-        if (mDispatcher) {
-            return null;
-        }
-
         return mMessenger.getBinder();
     }
 
