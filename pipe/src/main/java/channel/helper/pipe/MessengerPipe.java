@@ -57,12 +57,9 @@ public class MessengerPipe extends Handler implements Emitter {
     private static final String TAG = "MessengerPipe";
 
     private Messenger mMessenger;
-
-    private WeakReference<Dispatcher> mDispatcherWeakReference;
-    private boolean mDispatcher;
+    private Dispatcher mDispatcher;
 
     public MessengerPipe(IBinder binder) {
-        mDispatcher = false;
         mMessenger = new Messenger(binder);
     }
 
@@ -75,28 +72,22 @@ public class MessengerPipe extends Handler implements Emitter {
 
     public MessengerPipe(Looper looper, Dispatcher dispatcher) {
         super(looper);
-        mDispatcher = true;
+
+        if (dispatcher == null) {
+            throw new IllegalArgumentException("param 'dispatcher' is not null.");
+        }
+
         mMessenger = new Messenger(this);
-        mDispatcherWeakReference = new WeakReference<>(dispatcher);
+        mDispatcher = dispatcher;
     }
 
     @Override
     public void handleMessage(@NonNull Message msg) {
-        Dispatcher dispatcher = mDispatcherWeakReference.get();
-        if (dispatcher == null) {
-            return;
-        }
-
-        dispatcher.dispatch(getData(msg));
+        mDispatcher.dispatch(getData(msg));
     }
 
     @Override
     public void emit(Map<String, Object> data) {
-        if (mDispatcher) {
-            Log.e(TAG, "The current MessengerPipe can only be a dispatcher.");
-            return;
-        }
-
         Message message = Message.obtain();
         message.obj = new MapWrapper(data);
 
@@ -108,11 +99,6 @@ public class MessengerPipe extends Handler implements Emitter {
     }
 
     private Map<String, Object> getData(Message dataWrapper) {
-        if (!mDispatcher) {
-            Log.e(TAG, "The current MessengerPipe can only be a emitter.");
-            return new HashMap<>();
-        }
-
         if (dataWrapper.obj == null) {
             Log.d(TAG, "dataWrapper is empty.");
             return new HashMap<>();

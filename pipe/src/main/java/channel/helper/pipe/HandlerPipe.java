@@ -16,7 +16,7 @@ import channel.helper.Emitter;
 
 public class HandlerPipe extends Handler implements Emitter {
     private static final String TAG = "HandlerPipe";
-    private final WeakReference<Dispatcher> mDispatcherWeakReference;
+    private final Dispatcher mDispatcher;
 
     /**
      * Use Main Looper
@@ -27,7 +27,12 @@ public class HandlerPipe extends Handler implements Emitter {
 
     public HandlerPipe(Looper looper, Dispatcher dispatcher) {
         super(looper);
-        mDispatcherWeakReference = new WeakReference<>(dispatcher);
+
+        if (dispatcher == null) {
+            throw new IllegalArgumentException("param 'dispatcher' is not null.");
+        }
+
+        mDispatcher = dispatcher;
     }
 
     @Override
@@ -39,12 +44,7 @@ public class HandlerPipe extends Handler implements Emitter {
 
     @Override
     public void handleMessage(@NonNull Message msg) {
-        Dispatcher dispatcher = mDispatcherWeakReference.get();
-        if (dispatcher == null) {
-            return;
-        }
-
-        dispatcher.dispatch(getData(msg));
+        mDispatcher.dispatch(getData(msg));
     }
 
     @SuppressWarnings("unchecked cast")
