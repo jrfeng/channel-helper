@@ -19,6 +19,21 @@ public class DispatcherUtil {
 
                 return false;
             }
+
+            @Override
+            public boolean match(Map<String, Object> data) {
+                if (dispatcher.match(data)) {
+                    return true;
+                }
+
+                for (Dispatcher d : others) {
+                    if (d.match(data)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         };
     }
 }
