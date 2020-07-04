@@ -335,13 +335,6 @@ public class ChannelProcessor extends AbstractProcessor {
         ParameterizedTypeName WeakReference_targetInterface = ParameterizedTypeName.get(
                 ClassName.get(WeakReference.class), ClassName.get(targetInterface));
 
-        // Map<String, Object>
-        ParameterizedTypeName type_data = ParameterizedTypeName.get(
-                ClassName.get(Map.class),
-                ClassName.get(String.class),
-                ClassName.get(Object.class)
-        );
-
         // class: Dispatcher
         TypeSpec.Builder builder = TypeSpec.classBuilder("Dispatcher")
                 .addSuperinterface(ClassName.get(Dispatcher.class))
@@ -367,18 +360,56 @@ public class ChannelProcessor extends AbstractProcessor {
 
         builder.addMethod(constructor);
 
-        // override: pubic boolean dispatch(Map<String, Object> data)
-        final String method_dispatch = "dispatch";
-        final String param_data = "data";
-        final String variable_methodId = "methodId";
-        final String variable_callback = "callback";
+        builder.addMethod(overrideMethod_match());
+        builder.addMethod(overrideMethod_dispatch(targetInterface, methodIdPairs));
 
-        MethodSpec.Builder dispatchBuilder = MethodSpec.methodBuilder(method_dispatch)
+        return builder.build();
+    }
+
+    // override: pubic boolean match(Map<String, Object> data)
+    private MethodSpec overrideMethod_match() {
+        final String methodName = "match";
+        final String param_data = "data";
+
+        // Map<String, Object>
+        ParameterizedTypeName type_data = ParameterizedTypeName.get(
+                ClassName.get(Map.class),
+                ClassName.get(String.class),
+                ClassName.get(Object.class)
+        );
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder(methodName)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(boolean.class)
                 .addAnnotation(ClassName.get(Override.class))
                 .addParameter(type_data, param_data)
-                .beginControlFlow("if (!$N.equals($N.get($N)))", FIELD_CLASS_NAME, param_data, FIELD_KEY_CLASS_NAME)
+                .addStatement("return $N.equals($N.get($N))", FIELD_CLASS_NAME, param_data, FIELD_KEY_CLASS_NAME);
+
+        return builder.build();
+    }
+
+    // override: pubic boolean dispatch(Map<String, Object> data)
+    private MethodSpec overrideMethod_dispatch(TypeElement targetInterface,
+                                               List<Pair<String, ExecutableElement>> methodIdPairs) {
+        final String methodName = "dispatch";
+        final String param_data = "data";
+        final String variable_methodId = "methodId";
+        final String variable_callback = "callback";
+        final String field_callbackWeakReference = "callbackWeakReference";
+
+        // Map<String, Object>
+        ParameterizedTypeName type_data = ParameterizedTypeName.get(
+                ClassName.get(Map.class),
+                ClassName.get(String.class),
+                ClassName.get(Object.class)
+        );
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder(methodName)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(boolean.class)
+                .addAnnotation(ClassName.get(Override.class))
+                .addParameter(type_data, param_data)
+                .beginControlFlow("if (!match($N))", param_data)
                 .addStatement("return false")
                 .endControlFlow()
                 .addStatement("$T $N = ($T) $N.get($N)", TypeName.INT, variable_methodId, TypeName.INT, param_data, FIELD_KEY_METHOD_ID)
@@ -387,15 +418,14 @@ public class ChannelProcessor extends AbstractProcessor {
                 .addStatement("return false")
                 .endControlFlow();
 
-        dispatchBuilder.beginControlFlow("switch ($N)", variable_methodId);
+        builder.beginControlFlow("switch ($N)", variable_methodId);
 
-        buildAllSwitchCase(dispatchBuilder, methodIdPairs, param_data, variable_callback);
+        buildAllSwitchCase(builder, methodIdPairs, param_data, variable_callback);
 
-        dispatchBuilder.endControlFlow()
+        builder.endControlFlow()
                 .addStatement("return false");
 
-        return builder.addMethod(dispatchBuilder.build())
-                .build();
+        return builder.build();
     }
 
     private void buildAllSwitchCase(MethodSpec.Builder builder,
