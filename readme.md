@@ -317,7 +317,7 @@ public class Callback extends MediaControllerCompat.Callback {
 
 ### Use enum ordinal
 
-You can use the `@UseOrdinal` annotation to label an enumeration type parameter, this will replaces enumeration values with it ordinal integer. This is helpful for `IPC` because `Parcel` does not support enumeration types.
+You can use the `@UseOrdinal` annotation to annotated an enumeration type parameter, this will replaces enumeration values with it ordinal integer. This is helpful for `IPC` because `Parcel` does not support enumeration types.
 
 **Example:**
 
