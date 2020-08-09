@@ -17,9 +17,9 @@ allprojects {
 
 ```groovy
 dependencies {
-    implementation 'com.github.jrfeng.channel-helper:helper:1.2.2'
-    implementation 'com.github.jrfeng.channel-helper:pipe:1.2.2'
-    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.2.2'
+    implementation 'com.github.jrfeng.channel-helper:helper:1.2.6'
+    implementation 'com.github.jrfeng.channel-helper:pipe:1.2.6'
+    annotationProcessor 'com.github.jrfeng.channel-helper:processor:1.2.6'
 }
 ```
 
@@ -69,14 +69,18 @@ public final class ChannelHelper {
     public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {...}
 
     // Dispatcher Factory
+    // must hold a strong reference to the receiver
     public static <T> Dispatcher newDispatcher(Class<T> clazz, T receiver) {...}
 }
 ```
 
+**Note! `channel-helper` uses weak reference to avoid memory leaks, so must hold a strong reference to the receiver.**
+
 **Example 1**： Use with `HandlerPipe`
 
 ```java
-Duck receiver = new Duck() {
+// must hold a strong reference to the receiver
+private Duck mReceiver = new Duck() {
     @Override
     public void eat() {
         Log.d("App", "eat");
@@ -98,7 +102,9 @@ Duck receiver = new Duck() {
     }
 };
 
-Dispatcher duckDispatcher = ChannelHelper.newDispatcher(Duck.class, receiver);
+...
+
+Dispatcher duckDispatcher = ChannelHelper.newDispatcher(Duck.class, mReceiver);
 Duck emitter = ChannelHelper.newEmitter(Duck.class, new HandlerPipe(duckDispatcher));
 
 emitter.eat();          // output: eat
@@ -114,13 +120,15 @@ Service:
 ```java
 public class TestService extends Service {
     private MessengerPipe mMessengerPipe;
+    private Duck mReceiver;
     
     @Override
     public void onCreate() {
         super.onCreate();
         ...
         
-        Duck receiver = new Duck() {
+        // must hold a strong reference to the receiver
+        mReceiver = new Duck() {
             @Override
             public void eat() {
                 Log.d("App", "eat");
@@ -142,7 +150,7 @@ public class TestService extends Service {
             }
         };
         
-        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, receiver);
+        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, mReceiver);
         mMessengerPipe = new MessengerPipe(dispatcher);
     }
 
@@ -212,9 +220,11 @@ emitter.swing(7);
 // MediaSessionCompat.Callback
 public class Callback extends MediaSessionCompat.Callback {
     private CustomActionPipe mPipe; 
+    private Duck mReceiver;
 
     public Callback() {
-        Duck receiver = new Duck() {
+        // must hold a strong reference to the receiver
+        mReceiver = new Duck() {
             @Override
             public void eat() {
                 Log.d("App", "eat");
@@ -236,7 +246,7 @@ public class Callback extends MediaSessionCompat.Callback {
             }
         };
 
-        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, receiver);
+        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, mReceiver);
         mPipe = new CustomActionPipe(dispatcher);
     }
 
@@ -264,9 +274,11 @@ emitter.swing(7);
 // MediaControllerCompat.Callback
 public class Callback extends MediaControllerCompat.Callback {
     private SessionEventPipe mPipe;
+    private Duck mReceiver;
 
     public Callback() {
-        Duck receiver = new Duck() {
+        // must hold a strong reference to the receiver
+        mReceiver = new Duck() {
             @Override
             public void eat() {
                 Log.d("App", "eat");
@@ -288,7 +300,7 @@ public class Callback extends MediaControllerCompat.Callback {
             }
         };
 
-        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, receiver);
+        Dispacher dispatcher = ChannelHelper.newDispatcher(Duck.class, mReceiver);
         mPipe = new SessionEventPipe(dispatcher);
     }
 
