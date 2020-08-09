@@ -1,5 +1,6 @@
 package channel.helper.pipe;
 
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -55,6 +56,7 @@ import channel.helper.Emitter;
  */
 public class MessengerPipe extends Handler implements Emitter {
     private static final String TAG = "MessengerPipe";
+    private static final String KEY_MAP_WRAPPER = "map_wrapper";
 
     private Messenger mMessenger;
     private Dispatcher mDispatcher;
@@ -89,7 +91,11 @@ public class MessengerPipe extends Handler implements Emitter {
     @Override
     public void emit(Map<String, Object> data) {
         Message message = Message.obtain();
-        message.obj = new MapWrapper(data);
+
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(KEY_MAP_WRAPPER, new MapWrapper(data));
+
+        message.setData(bundle);
 
         try {
             mMessenger.send(message);
@@ -99,17 +105,20 @@ public class MessengerPipe extends Handler implements Emitter {
     }
 
     private Map<String, Object> getData(Message dataWrapper) {
-        if (dataWrapper.obj == null) {
+        Bundle bundle = dataWrapper.getData();
+
+        if (bundle == null) {
             Log.d(TAG, "dataWrapper is empty.");
             return new HashMap<>();
         }
 
-        if (!(dataWrapper.obj instanceof MapWrapper)) {
+        bundle.setClassLoader(MapWrapper.class.getClassLoader());
+        MapWrapper mapWrapper = bundle.getParcelable(KEY_MAP_WRAPPER);
+
+        if (mapWrapper == null) {
             Log.d(TAG, "dataWrapper is empty.");
             return new HashMap<>();
         }
-
-        MapWrapper mapWrapper = (MapWrapper) dataWrapper.obj;
 
         return mapWrapper.getMap();
     }
