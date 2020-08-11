@@ -27,7 +27,7 @@ dependencies {
 
 **Step 1**. Create an interface, example:
 
-**Warning! return type must be `void`.**
+**Note: return type must be `void`.**
 
 ```java
 public interface Duck {
