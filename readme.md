@@ -69,17 +69,17 @@ public final class ChannelHelper {
     public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {...}
 
     // Dispatcher Factory
-    // must hold a strong reference to the receiver
+    // must hold a strong reference of receiver
     public static <T> Dispatcher newDispatcher(Class<T> clazz, T receiver) {...}
 }
 ```
 
-**Note! `channel-helper` uses weak reference to avoid memory leaks, so must hold a strong reference to the receiver.**
+**Note: `channel-helper` uses weak reference to avoid memory leaks, so must hold a strong reference of receiver.**
 
 **Example 1**： Use with `HandlerPipe`
 
 ```java
-// must hold a strong reference to the receiver
+// must hold a strong reference of receiver
 private Duck mReceiver = new Duck() {
     @Override
     public void eat() {
@@ -127,7 +127,7 @@ public class TestService extends Service {
         super.onCreate();
         ...
         
-        // must hold a strong reference to the receiver
+        // must hold a strong reference of receiver
         mReceiver = new Duck() {
             @Override
             public void eat() {
@@ -198,7 +198,7 @@ public class TestServiceConnection implements ServiceConnection {
 }
 ```
 
-**Warnning! if you use `MessengerPipe` for `IPC`, Make sure the parameter type of the method meets the requirements of [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)).**
+**Note: if you use `MessengerPipe` for `IPC`, Make sure the parameter type of the method meets the requirements of [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)).**
 
 ### MediaSession
 
@@ -223,7 +223,7 @@ public class Callback extends MediaSessionCompat.Callback {
     private Duck mReceiver;
 
     public Callback() {
-        // must hold a strong reference to the receiver
+        // must hold a strong reference of receiver
         mReceiver = new Duck() {
             @Override
             public void eat() {
@@ -277,7 +277,7 @@ public class Callback extends MediaControllerCompat.Callback {
     private Duck mReceiver;
 
     public Callback() {
-        // must hold a strong reference to the receiver
+        // must hold a strong reference of receiver
         mReceiver = new Duck() {
             @Override
             public void eat() {
@@ -333,18 +333,21 @@ public interface Foo {
 
 ### Merge multiple dispatcher 
 
-We can use static method `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` multiple dispatcher.
+You can use static method `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` merge multiple dispatcher. So you can sharing one pipe instance between multiple channel interface, don't need to create a new pipe instance for each channel interface.
 
 **`Example`:**
 
 ```java
-Duck duckReceiver = new Duck() {/*...*/};
-Chicken chickenReceiver = new Chicken() {/*...*/});
+// must hold a strong reference of receiver
+private Duck mDuckReceiver = new Duck() {/*...*/};
+private Chicken mChickenReceiver = new Chicken() {/*...*/});
+
+...
 
 // merge multiple dispatcher
 Dispatcher mergeDispatcher = DispatcherUtil.merge(
-        ChannelHelper.newDispatcher(Duck.class, duckReceiver),
-        ChannelHelper.newDispatcher(Chicken.class, chickenReceiver)
+        ChannelHelper.newDispatcher(Duck.class, mDuckReceiver),
+        ChannelHelper.newDispatcher(Chicken.class, mChickenReceiver)
     );
 
 // pipe
