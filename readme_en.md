@@ -1,3 +1,7 @@
+[**中文**](./readme.md)
+
+Used to simplify the use of Handler and Messenger, and simplify the use of CustomAction and SessionEvent of MediaSession.
+
 ## Download
 
 **Step 1**. Add the JitPack repository to your build file
