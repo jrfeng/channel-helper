@@ -1,10 +1,8 @@
-[**English**](./readme_en.md)
+## Download
 
-用于简化 `Hander` 与 `Messenger` 的使用，以及简化和 `MediaSession` 的 `CustomAction` 和 `SessionEvent` 的使用。
+**Step 1**. Add the JitPack repository to your build file
 
-## 配置项目
-
-**第 1 步**：在你的项目的根目录下的 `build.gradle` 文件中添加以下配置：
+Add it in your root build.gradle at the end of repositories:
 
 ```groovy
 allprojects {
@@ -15,7 +13,7 @@ allprojects {
 }
 ```
 
-**第 2 步**：添加依赖 [![](https://jitpack.io/v/jrfeng/channel-helper.svg)](https://jitpack.io/#jrfeng/channel-helper)
+**Step 2**. Add the dependency [![](https://jitpack.io/v/jrfeng/channel-helper.svg)](https://jitpack.io/#jrfeng/channel-helper)
 
 ```groovy
 dependencies {
@@ -25,11 +23,11 @@ dependencies {
 }
 ```
 
-## 开始使用
+## How to use
 
-**第 1 步**：创建一个接口，如下例所示：
+**Step 1**. Create an interface, example:
 
-**注意：接口中方法的返回值类型必须是 `void`。**
+**Note: return type must be `void`.**
 
 ```java
 public interface Duck {
@@ -43,7 +41,7 @@ public interface Duck {
 }
 ```
 
-**第 2 步**：使用 `@Channel` 注解标注创建的接口，如下例所示：
+**Step 2**. Annotated with the **`@Channel`** annotation, example:
 
 ```java
 import channel.helper.Channel;
@@ -60,28 +58,28 @@ public interface Duck {
 }
 ```
 
-**第 3 步**：使用 `ChannelHelper` 工具类创建一个 emitter 和一个 dispatcher。
+**Step 3**. Use `ChannelHelper` to create emitter and dispatcher.
 
-`ChannelHelper` 的工厂方法：
+**`ChannelHelper`：**
 
 ```java
 public final class ChannelHelper {
     ...
-    // Emitter 工厂
+    // Emitter Factory
     public static <T> T newEmitter(Class<T> clazz, Emitter pipe) {...}
 
-    // Dispatcher 工厂
-    // 需要持有 receiver 的一个强引用
+    // Dispatcher Factory
+    // must hold a strong reference of receiver
     public static <T> Dispatcher newDispatcher(Class<T> clazz, T receiver) {...}
 }
 ```
 
-**注意: `channel-helper` 使用弱引用来避免内存泄露，因此需要持有 receiver 的一个强引用**
+**Note: `channel-helper` uses weak reference to avoid memory leaks, so must hold a strong reference of receiver.**
 
-**例 1**：与 `HandlerPipe` 配合使用
+**Example 1**： Use with `HandlerPipe`
 
 ```java
-// 需要持有 receiver 的一个强引用
+// must hold a strong reference of receiver
 private Duck mReceiver = new Duck() {
     @Override
     public void eat() {
@@ -109,13 +107,13 @@ private Duck mReceiver = new Duck() {
 Dispatcher duckDispatcher = ChannelHelper.newDispatcher(Duck.class, mReceiver);
 Duck emitter = ChannelHelper.newEmitter(Duck.class, new HandlerPipe(duckDispatcher));
 
-emitter.eat();          // 输出: eat
-emitter.quack(8);       // 输出: quack: {voice:8}
-emitter.fly(5, 12);     // 输出: fly: {high:5, speed:12}
-emitter.swing(7);       // 输出: swing: {speed:12}
+emitter.eat();          // output: eat
+emitter.quack(8);       // output: quack: {voice:8}
+emitter.fly(5, 12);     // output: fly: {high:5, speed:12}
+emitter.swing(7);       // output: swing: {speed:12}
 ```
 
-**例 2**：与 `MessengerPipe` 配合使用，用于进程间通信（`IPC`）
+**Example 2**: Use with `MessengerPipe` for `IPC`
 
 Service:
 
@@ -129,7 +127,7 @@ public class TestService extends Service {
         super.onCreate();
         ...
         
-        // 需要持有 receiver 的一个强引用
+        // must hold a strong reference of receiver
         mReceiver = new Duck() {
             @Override
             public void eat() {
@@ -200,17 +198,17 @@ public class TestServiceConnection implements ServiceConnection {
 }
 ```
 
-**注意: 如果你使用 `MessengerPipe` 用于进程间通信，请确保接口中方法的参数类型满足 [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)) 的要求。**
+**Note: if you use `MessengerPipe` for `IPC`, Make sure the parameter type of the method meets the requirements of [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)).**
 
 ### MediaSession
 
-* `CustomActionPipe`: 帮助处理 custom action.
-* `SessionEventPipe`: 帮助处理 session event.
+* `CustomActionPipe`: Help handle custom action.
+* `SessionEventPipe`: Help handle session event.
 
-**`CustomActionPipe` 示例:**
+**`CustomActionPipe` Example:**
 
 ```java
-// 发送端
+// Sender
 CustomActionPipe pipe = new CustomActionPipe(mTransportControls);
 Duck emitter = ChannelHelper.newEmitter(Duck.class, pipe);
 
@@ -219,13 +217,13 @@ emitter.quack(8);
 emitter.fly(5, 12);
 emitter.swing(7);
 
-// 接收端：MediaSessionCompat.Callback
+// MediaSessionCompat.Callback
 public class Callback extends MediaSessionCompat.Callback {
     private CustomActionPipe mPipe; 
     private Duck mReceiver;
 
     public Callback() {
-        // 需要持有 receiver 的一个强引用
+        // must hold a strong reference of receiver
         mReceiver = new Duck() {
             @Override
             public void eat() {
@@ -261,10 +259,10 @@ public class Callback extends MediaSessionCompat.Callback {
 }
 ```
 
-**`SessionEventPipe` 示例:**
+**`SessionEventPipe` Example:**
 
 ```java
-// 发送端
+// Sender
 SessionEventPipe pipe = new SessionEventPipe(mMediaSessionCompat);
 Duck emitter = ChannelHelper.newEmitter(Duck.class, pipe);
 
@@ -273,13 +271,13 @@ emitter.quack(8);
 emitter.fly(5, 12);
 emitter.swing(7);
 
-// 接收端：MediaControllerCompat.Callback
+// MediaControllerCompat.Callback
 public class Callback extends MediaControllerCompat.Callback {
     private SessionEventPipe mPipe;
     private Duck mReceiver;
 
     public Callback() {
-        // 需要持有 receiver 的一个强引用
+        // must hold a strong reference of receiver
         mReceiver = new Duck() {
             @Override
             public void eat() {
@@ -315,13 +313,13 @@ public class Callback extends MediaControllerCompat.Callback {
 }
 ```
 
-## 其他
+## Other
 
-### 使用枚举值的序数
+### Use enum ordinal
 
-可以使用 `@UseOrdinal` 注解标记一个枚举类型的参数，这将使用枚举值的序数整数替换枚举值。这对 `IPC` 很有帮助，因为 `Parcel` 不支持枚举类型。
+You can use the `@UseOrdinal` annotation to annotated an enumeration type parameter, this will replaces enumeration values with it ordinal integer. This is helpful for `IPC` because `Parcel` does not support enumeration types.
 
-**例：**
+**Example:**
 
 ```java
 public enum Color {
@@ -333,29 +331,29 @@ public interface Foo {
 }
 ```
 
-### 合并多个 dispatcher 
+### Merge multiple dispatcher 
 
-可以使用具体方法 `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` 合并多个 `dispatcher`。这样的化，你就可以在多个接口之间共享同一个 `pipe` 实例（如 `HandlerPipe`），而不需要为每个接口创建一个新的 `pipe` 实例。
+You can use static method `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` merge multiple dispatcher. So you can sharing one pipe instance between multiple channel interface, don't need to create a new pipe instance for each channel interface.
 
 **`Example`:**
 
 ```java
-// 需要持有 receiver 的一个强引用
+// must hold a strong reference of receiver
 private Duck mDuckReceiver = new Duck() {/*...*/};
 private Chicken mChickenReceiver = new Chicken() {/*...*/});
 
 ...
 
-// 合并多个 dispatcher
+// merge multiple dispatcher
 Dispatcher mergeDispatcher = DispatcherUtil.merge(
         ChannelHelper.newDispatcher(Duck.class, mDuckReceiver),
         ChannelHelper.newDispatcher(Chicken.class, mChickenReceiver)
     );
 
-// 创建一个 HandlerPipe 对象
+// pipe
 HandlerPipe handlerPipe = new HandlerPipe(mergeDispatcher);
 
-// 创建 emitter: 共享同一个 HandlerPipe 对象
+// create emitter: share handlerPipe
 Duck duckEmitter = ChannelHelper.newEmitter(Duck.class, handlerPipe);
 Chicken chickenEmitter = ChannelHelper.newEmitter(Chicken.class, handlerPipe);
 ```
