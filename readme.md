@@ -1,6 +1,6 @@
 [**English**](./readme_en.md)
 
-**用于简化 `Handler` 与 `Messenger` 的使用，以及简化 `MediaSession` 的 `CustomAction` 和 `SessionEvent` 的使用。**
+**用于简化 Handler 与 Messenger 的使用，以及简化 MediaSession 的 CustomAction 和 SessionEvent 的使用。**
 
 ## 配置项目
 
@@ -60,7 +60,7 @@ public interface Duck {
 }
 ```
 
-**第 3 步**：使用 `ChannelHelper` 工具类创建一个 emitter 和一个 dispatcher。
+**第 3 步**：使用 `ChannelHelper` 工具类创建一个 `emitter` 和一个 `dispatcher`。
 
 `ChannelHelper` 的工厂方法：
 
@@ -76,7 +76,7 @@ public final class ChannelHelper {
 }
 ```
 
-**注意: `channel-helper` 使用弱引用来避免内存泄露，因此需要持有 receiver 的一个强引用**
+**注意： `channel-helper` 使用弱引用来避免内存泄露，因此需要持有 `receiver` 的一个强引用**
 
 **例 1**：与 `HandlerPipe` 配合使用
 
@@ -115,9 +115,9 @@ emitter.fly(5, 12);     // 输出: fly: {high:5, speed:12}
 emitter.swing(7);       // 输出: swing: {speed:12}
 ```
 
-**例 2**：与 `MessengerPipe` 配合使用，用于进程间通信（`IPC`）
+**例 2**：与 `MessengerPipe` 配合使用，用于 IPC
 
-Service:
+Service：
 
 ```java
 public class TestService extends Service {
@@ -164,7 +164,7 @@ public class TestService extends Service {
 }
 ```
 
-ServiceConnection:
+ServiceConnection：
 
 ```java
 public class TestServiceConnection implements ServiceConnection {
@@ -200,14 +200,14 @@ public class TestServiceConnection implements ServiceConnection {
 }
 ```
 
-**注意: 如果你使用 `MessengerPipe` 用于进程间通信，请确保接口中方法的参数类型满足 [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)) 的要求。**
+**注意：如果你使用 `MessengerPipe` 用于进程间通信，请确保接口中方法的参数类型满足 [`Parcel.writeValue(Object)`](https://developer.android.com/reference/android/os/Parcel#writeValue(java.lang.Object)) 的要求。**
 
 ### MediaSession
 
-* `CustomActionPipe`: 帮助处理 custom action.
-* `SessionEventPipe`: 帮助处理 session event.
+* **`CustomActionPipe`**：帮助处理 custom action.
+* **`SessionEventPipe`**：帮助处理 session event.
 
-**`CustomActionPipe` 示例:**
+**`CustomActionPipe` 示例：**
 
 ```java
 // 发送端
@@ -261,7 +261,7 @@ public class Callback extends MediaSessionCompat.Callback {
 }
 ```
 
-**`SessionEventPipe` 示例:**
+**`SessionEventPipe` 示例：**
 
 ```java
 // 发送端
@@ -335,9 +335,9 @@ public interface Foo {
 
 ### 合并多个 dispatcher 
 
-可以使用具体方法 `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` 合并多个 `dispatcher`。这样的化，你就可以在多个接口之间共享同一个 `pipe` 实例（如 `HandlerPipe`），而不需要为每个接口创建一个新的 `pipe` 实例。
+可以使用具体方法 `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` 合并多个 `dispatcher`。这样的化，你就可以在多个接口之间共享同一个 `pipe` 实例（例如 `HandlerPipe`），而不需要为每个接口创建一个新的 `pipe` 实例。
 
-**`Example`:**
+**例：**
 
 ```java
 // 需要持有 receiver 的一个强引用
@@ -355,7 +355,7 @@ Dispatcher mergeDispatcher = DispatcherUtil.merge(
 // 创建一个 HandlerPipe 对象
 HandlerPipe handlerPipe = new HandlerPipe(mergeDispatcher);
 
-// 创建 emitter: 共享同一个 HandlerPipe 对象
+// 创建 emitter：共享同一个 HandlerPipe 对象
 Duck duckEmitter = ChannelHelper.newEmitter(Duck.class, handlerPipe);
 Chicken chickenEmitter = ChannelHelper.newEmitter(Chicken.class, handlerPipe);
 ```
