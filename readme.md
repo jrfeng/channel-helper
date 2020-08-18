@@ -335,7 +335,7 @@ public interface Foo {
 
 ### 合并多个 dispatcher 
 
-可以使用具体方法 `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` 合并多个 `dispatcher`。这样的化，你就可以在多个接口之间共享同一个 `pipe` 实例（例如 `HandlerPipe`），而不需要为每个接口创建一个新的 `pipe` 实例。
+可以使用静态方法 `DispatcherUtil.merge(Dispacher dispatcher, Dispacher... others)` 合并多个 `dispatcher`。这样的话，你就可以在多个接口之间共享同一个 `pipe` 实例（例如 `HandlerPipe`），而不需要为每个接口创建一个新的 `pipe` 实例。
 
 **例：**
 
