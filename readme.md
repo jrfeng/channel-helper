@@ -1,6 +1,6 @@
 [**English**](./readme_en.md)
 
-用于简化 `Hander` 与 `Messenger` 的使用，以及简化和 `MediaSession` 的 `CustomAction` 和 `SessionEvent` 的使用。
+用于简化 `Hander` 与 `Messenger` 的使用，以及简化 `MediaSession` 的 `CustomAction` 和 `SessionEvent` 的使用。
 
 ## 配置项目
 
