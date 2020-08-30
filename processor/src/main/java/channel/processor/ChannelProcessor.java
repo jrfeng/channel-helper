@@ -9,7 +9,6 @@ import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
 
 import channel.helper.UseOrdinal;
-import javafx.util.Pair;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
