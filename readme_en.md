@@ -1,6 +1,6 @@
 [**中文**](./readme.md)
 
-Used to simplify the use of Handler and Messenger, and simplify the use of CustomAction and SessionEvent of MediaSession.
+One way message distribution tool, for simplify Handler and Messenger, and simplify CustomAction and SessionEvent of MediaSession.
 
 ## Download
 
