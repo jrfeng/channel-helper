@@ -1,6 +1,6 @@
 [**English**](./readme_en.md)
 
-**用于简化 Handler 与 Messenger 的使用，以及简化 MediaSession 的 CustomAction 和 SessionEvent 的使用。**
+**单向消息分发工具，用于简化 Handler 与 Messenger 的使用，以及简化 MediaSession 的 CustomAction 和 SessionEvent 的使用。**
 
 ## 配置项目
 
